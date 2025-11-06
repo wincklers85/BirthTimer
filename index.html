@@ -3,23 +3,15 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0,user-scalable=no">
-<title>BirthTimer — Sweet Arrival v3.3</title>
+<title>BirthTimer — Sweet Arrival v3.3.1</title>
 <link href="https://fonts.googleapis.com/css2?family=Nunito+Sans:wght@400;600&family=Pacifico&display=swap" rel="stylesheet">
 <style>
-:root{
-  --bg:#f9f5ef; --fg:#2b2b2b; --accent:#c48a63; --card:#ffffff;
-  --soft-shadow:0 4px 12px rgba(0,0,0,0.1);
-}
+:root{ --bg:#f9f5ef; --fg:#2b2b2b; --accent:#c48a63; --card:#ffffff; --soft-shadow:0 4px 12px rgba(0,0,0,0.1);}
 body{margin:0;font-family:'Nunito Sans',sans-serif;background:var(--bg);color:var(--fg);text-align:center;overflow-x:hidden;}
 header{padding:25px 10px;}
 .logo{font-family:'Pacifico',cursive;font-size:2.2em;color:var(--accent);text-shadow:0 1px 3px rgba(0,0,0,0.15);}
 .sub{font-size:.9em;color:#666;}
-.pattern{
-  background-image:
-    radial-gradient(rgba(196,138,99,0.15) 1.5px,transparent 1.5px),
-    radial-gradient(rgba(196,138,99,0.15) 1.5px,transparent 1.5px);
-  background-size:40px 40px;background-position:0 0,20px 20px;
-}
+.pattern{background-image:radial-gradient(rgba(196,138,99,0.15) 1.5px,transparent 1.5px),radial-gradient(rgba(196,138,99,0.15) 1.5px,transparent 1.5px);background-size:40px 40px;background-position:0 0,20px 20px;}
 .card{background:var(--card);box-shadow:var(--soft-shadow);border-radius:20px;padding:15px;margin:15px auto;max-width:560px;}
 button,input,select,textarea{font-family:'Nunito Sans',sans-serif;border-radius:12px;border:1px solid #ddd;padding:10px 15px;font-size:1em;margin:6px;}
 button{background:var(--accent);color:#fff;border:none;cursor:pointer;box-shadow:0 3px 6px rgba(0,0,0,0.15);transition:.2s;}
@@ -39,9 +31,10 @@ td,th{border-bottom:1px solid #ddd;padding:6px;text-align:center;}
 .banner{background:#fff7e6;border:1px solid #ffd89b;color:#8b5e00;padding:8px 12px;border-radius:12px;margin:10px auto;display:none;max-width:560px;}
 .status{background:#eef6ff;border:1px solid #cfe2ff;color:#0b4a8b;padding:8px 12px;border-radius:12px;margin:10px auto;max-width:560px;text-align:left;}
 .status pre{white-space:pre-wrap;margin:6px 0 0 0;font-family:'Nunito Sans',sans-serif;}
-footer{font-size:.8em;margin:25px 0 10px;color:#777;}
 .small{font-size:.85em;color:#777}
 .hidden{display:none;}
+canvas#chart{width:100%;height:220px;margin:8px 0;}
+footer{font-size:.8em;margin:25px 0 10px;color:#777;}
 </style>
 </head>
 <body class="pattern">
@@ -61,16 +54,9 @@ footer{font-size:.8em;margin:25px 0 10px;color:#777;}
     </div>
     <div class="row">
       <label for="langSel" class="small" id="t_langLabel">Lingua</label>
-      <select id="langSel">
-        <option value="it">Italiano</option>
-        <option value="en">English</option>
-      </select>
+      <select id="langSel"><option value="it">Italiano</option><option value="en">English</option></select>
       <label for="themeSel" class="small" id="t_themeLabel">Tema</label>
-      <select id="themeSel">
-        <option value="beige">🤍 Beige</option>
-        <option value="pink">🌸 Rosa</option>
-        <option value="blue">💙 Azzurro</option>
-      </select>
+      <select id="themeSel"><option value="beige">🤍 Beige</option><option value="pink">🌸 Rosa</option><option value="blue">💙 Azzurro</option></select>
     </div>
     <button id="startApp">Inizia / Start</button>
   </div>
@@ -146,215 +132,98 @@ footer{font-size:.8em;margin:25px 0 10px;color:#777;}
       </div>
     </div>
 
-    <div class="small" id="signature">BirthTimer v3.3 — Created by <b>Stephan Winckler</b> © 2025</div>
+    <div class="small" id="signature">BirthTimer v3.3.1 — Created by <b>Stephan Winckler</b> © 2025</div>
   </div>
 </div>
 
 <footer class="small" id="footerNote">Tutti i dati restano sul tuo dispositivo</footer>
 
-<!-- libs -->
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+<!-- (Facoltative) librerie CDN: se non caricano, l'app continua a funzionare -->
+<script defer src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
 
 <script>
-/* ===================== i18n ===================== */
-const I = {
-  it:{ subtitle:"Il giorno in cui sei arrivato", setupTitle:"Impostazioni iniziali", langLabel:"Lingua", themeLabel:"Tema",
-    start:"Inizia", waiting:"In attesa delle contrazioni...", phase:"Fase", advTitle:"Suggerimenti",
-    logTitle:"Storico / Log", diaryTitle:"📔 Diario nascita", colTime:"Ora", colDur:"Durata", colInt:"Intervallo", colPhase:"Fase",
-    markWaters:"💧 Segna “acque rotte”", clearWaters:"🧽 Annulla “acque rotte”",
-    watersAt: ts=>"💧 Acque rotte: "+new Date(ts).toLocaleString(),
-    resetLog:"♻️ Reset Log", resetAll:"🧹 Reset Tutto",
-    btnStart:"Start", btnStop:"Stop", beepOn:"🔊 Battito ON", beepOff:"🔇 Battito OFF",
-    banner511:"Regola 5-1-1 raggiunta: è ora di andare in ospedale.",
-    suggest_init:["Riposo, idratazione, snack leggeri.","Doccia calda o impacchi tiepidi per la schiena.","Respiri profondi: 4 secondi inspiro, 6 espirazione."],
-    suggest_active:["Travaglio attivo: preparatevi a partire.","Idratazione frequente e svuota la vescica regolarmente.","Massaggi lombari e oscillazioni del bacino."],
-    suggest_close:["Contrazioni ravvicinate (≤3 min): partite subito per l’ospedale.","Respiri brevi-rapidi durante i picchi, profondi tra le onde.","Posizioni in avanti per comfort (appoggio a un tavolo)."],
-    suggest_easy:["Fase iniziale: riposo, passeggiata leggera.","Doccia calda e respiro diaframmatico.","Conserva energie, cibo leggero."],
-    avgInterval:m=>`Media intervallo ≈ ${m.toFixed(1)} min`,
-    etaActive:mins=>`Stima travaglio attivo ~${Math.max(0,mins).toFixed(0)} min`,
-    statusTitle:"Stato attuale", copy:"Copia", whatsappTitle:"WhatsApp",
-    backup:"Backup", restore:"Ripristina",
-    whatsappMsg:(info,phase,avgInt,avgDur,rule511,waters)=>`BIRTHTIMER — STATO
-Mamma: ${info.mamma||"-"}  Papà: ${info.papa||"-"} ${info.bimbo?("  Bimbo/a: "+info.bimbo):""}
-Fase: ${phase}
-Intervallo medio: ${avgInt?avgInt.toFixed(1):"-"} min
-Durata media: ${avgDur?avgDur.toFixed(0):"-"} s
-${waters?("Acque rotte: "+new Date(waters).toLocaleString()):"Acque integre"}
-${rule511?"✅ Regola 5-1-1 raggiunta":"ℹ️ 5-1-1 non ancora"}
-(Questo messaggio è stato inviato dall’app BirthTimer)`,
-    pdf_title:"BirthTimer — Sweet Arrival",
-    pdf_phrase_ready:"Il ritmo racconta determinazione e forza: siete pronti ad accogliere il vostro piccolo.",
-    pdf_phrase_close:"Onde ravvicinate e intense: state navigando l’ultima tratta, con coraggio e presenza.",
-    pdf_phrase_active:"Passi regolari verso l’incontro: idratazione, respiro e dolcezza rendono più morbida la strada.",
-    pdf_phrase_early:"I primi segnali raccontano un viaggio che inizia: rispettate i tempi, curate la calma.",
-    pdf_footer:"Il giorno in cui abbiamo contato ogni battito, in attesa di incontrarti per la prima volta.",
-    statusLabel:"Stato attuale",
-    noNotes:"Nessuna nota",
-    confirmResetLog:"Azzerare solo il log contrazioni?",
-    confirmResetAll:"Cancellare TUTTO (log, note, impostazioni)?",
-    watersSaved:"Segnato orario delle acque rotte.",
-    watersCleared:"Acque rotte annullate."
-  },
-  en:{ subtitle:"The day you arrived", setupTitle:"Initial setup", langLabel:"Language", themeLabel:"Theme",
-    start:"Start", waiting:"Waiting for contractions...", phase:"Phase", advTitle:"Tips",
-    logTitle:"History / Log", diaryTitle:"📔 Birth diary", colTime:"Time", colDur:"Duration", colInt:"Interval", colPhase:"Phase",
-    markWaters:"💧 Mark “waters broke”", clearWaters:"🧽 Clear “waters broke”",
-    watersAt: ts=>"💧 Waters broke: "+new Date(ts).toLocaleString(),
-    resetLog:"♻️ Reset Log", resetAll:"🧹 Reset All",
-    btnStart:"Start", btnStop:"Stop", beepOn:"🔊 Beat ON", beepOff:"🔇 Beat OFF",
-    banner511:"5-1-1 reached: it’s time to go to the hospital.",
-    suggest_init:["Rest, hydration, light snacks.","Warm shower or warm compress for the back.","Deep breathing: inhale 4s, exhale 6s."],
-    suggest_active:["Active labour: get ready to leave.","Hydrate and empty bladder regularly.","Lower back massage and gentle hip rocking."],
-    suggest_close:["Very close contractions (≤3 min): leave for the hospital now.","Short-quick breaths at the peak, deeper between waves.","Forward-leaning positions can help."],
-    suggest_easy:["Early phase: rest, light walk.","Warm shower and diaphragmatic breathing.","Save energy, light food."],
-    avgInterval:m=>`Avg interval ≈ ${m.toFixed(1)} min`,
-    etaActive:mins=>`Active labour ETA ~${Math.max(0,mins).toFixed(0)} min`,
-    statusTitle:"Current status", copy:"Copy", whatsappTitle:"WhatsApp",
-    backup:"Backup", restore:"Restore",
-    whatsappMsg:(info,phase,avgInt,avgDur,rule511,waters)=>`BIRTHTIMER — STATUS
-Mom: ${info.mamma||"-"}  Dad: ${info.papa||"-"} ${info.bimbo?("  Baby: "+info.bimbo):""}
-Phase: ${phase}
-Avg interval: ${avgInt?avgInt.toFixed(1):"-"} min
-Avg duration: ${avgDur?avgDur.toFixed(0):"-"} s
-${waters?("Waters broke: "+new Date(waters).toLocaleString()):"Membranes intact"}
-${rule511?"✅ 5-1-1 achieved":"ℹ️ Not yet 5-1-1"}
-(Sent from the BirthTimer app)`,
-    pdf_title:"BirthTimer — Sweet Arrival",
-    pdf_phrase_ready:"Your rhythm shows strength and readiness: you’re about to meet your baby.",
-    pdf_phrase_close:"Waves are close and intense: you are navigating the last stretch with courage.",
-    pdf_phrase_active:"Steady steps toward meeting: hydration, breathing, and kindness smooth the way.",
-    pdf_phrase_early:"Early signs of a journey beginning: honour the pace and protect your calm.",
-    pdf_footer:"The day we counted every heartbeat, waiting to meet you for the first time.",
-    statusLabel:"Current status",
-    noNotes:"No notes yet",
-    confirmResetLog:"Clear contractions log only?",
-    confirmResetAll:"Erase EVERYTHING (log, notes, settings)?",
-    watersSaved:"Waters broke time saved.",
-    watersCleared:"Waters broke cleared."
-  }
-};
-let lang="it";
-function t(key,...args){ const v=I[lang][key]; return (typeof v==="function")?v(...args):v; }
+/* ========== i18n ========== */
+const I={it:{subtitle:"Il giorno in cui sei arrivato",setupTitle:"Impostazioni iniziali",langLabel:"Lingua",themeLabel:"Tema",start:"Inizia",waiting:"In attesa delle contrazioni...",phase:"Fase",advTitle:"Suggerimenti",logTitle:"Storico / Log",diaryTitle:"📔 Diario nascita",colTime:"Ora",colDur:"Durata",colInt:"Intervallo",colPhase:"Fase",markWaters:"💧 Segna “acque rotte”",clearWaters:"🧽 Annulla “acque rotte”",watersAt:ts=>"💧 Acque rotte: "+new Date(ts).toLocaleString(),resetLog:"♻️ Reset Log",resetAll:"🧹 Reset Tutto",btnStart:"Start",btnStop:"Stop",beepOn:"🔊 Battito ON",beepOff:"🔇 Battito OFF",banner511:"Regola 5-1-1 raggiunta: è ora di andare in ospedale.",suggest_init:["Riposo, idratazione, snack leggeri.","Doccia calda o impacchi tiepidi per la schiena.","Respiri profondi: 4 secondi inspiro, 6 espirazione."],suggest_active:["Travaglio attivo: preparatevi a partire.","Idratazione frequente e svuota la vescica regolarmente.","Massaggi lombari e oscillazioni del bacino."],suggest_close:["Contrazioni ravvicinate (≤3 min): partite subito per l’ospedale.","Respiri brevi-rapidi durante i picchi, profondi tra le onde.","Posizioni in avanti per comfort (appoggio a un tavolo)."],suggest_easy:["Fase iniziale: riposo, passeggiata leggera.","Doccia calda e respiro diaframmatico.","Conserva energie, cibo leggero."],avgInterval:m=>`Media intervallo ≈ ${m.toFixed(1)} min`,etaActive:mins=>`Stima travaglio attivo ~${Math.max(0,mins).toFixed(0)} min`,statusTitle:"Stato attuale",copy:"Copia",whatsappTitle:"WhatsApp",backup:"Backup",restore:"Ripristina",whatsappMsg:(info,phase,avgInt,avgDur,rule511,waters)=>`BIRTHTIMER — STATO\nMamma: ${info.mamma||"-"}  Papà: ${info.papa||"-"} ${info.bimbo?("  Bimbo/a: "+info.bimbo):""}\nFase: ${phase}\nIntervallo medio: ${avgInt?avgInt.toFixed(1):"-"} min\nDurata media: ${avgDur?avgDur.toFixed(0):"-"} s\n${waters?("Acque rotte: "+new Date(waters).toLocaleString()):"Acque integre"}\n${rule511?"✅ Regola 5-1-1 raggiunta":"ℹ️ 5-1-1 non ancora"}\n(Questo messaggio è stato inviato dall’app BirthTimer)`,pdf_title:"BirthTimer — Sweet Arrival",pdf_phrase_ready:"Il ritmo racconta determinazione e forza: siete pronti ad accogliere il vostro piccolo.",pdf_phrase_close:"Onde ravvicinate e intense: state navigando l’ultima tratta, con coraggio e presenza.",pdf_phrase_active:"Passi regolari verso l’incontro: idratazione, respiro e dolcezza rendono più morbida la strada.",pdf_phrase_early:"I primi segnali raccontano un viaggio che inizia: rispettate i tempi, curate la calma.",pdf_footer:"Il giorno in cui abbiamo contato ogni battito, in attesa di incontrarti per la prima volta.",statusLabel:"Stato attuale",noNotes:"Nessuna nota",confirmResetLog:"Azzerare solo il log contrazioni?",confirmResetAll:"Cancellare TUTTO (log, note, impostazioni)?",watersSaved:"Segnato orario delle acque rotte.",watersCleared:"Acque rotte annullate."},en:{subtitle:"The day you arrived",setupTitle:"Initial setup",langLabel:"Language",themeLabel:"Theme",start:"Start",waiting:"Waiting for contractions...",phase:"Phase",advTitle:"Tips",logTitle:"History / Log",diaryTitle:"📔 Birth diary",colTime:"Time",colDur:"Duration",colInt:"Interval",colPhase:"Phase",markWaters:"💧 Mark “waters broke”",clearWaters:"🧽 Clear “waters broke”",watersAt:ts=>"💧 Waters broke: "+new Date(ts).toLocaleString(),resetLog:"♻️ Reset Log",resetAll:"🧹 Reset All",btnStart:"Start",btnStop:"Stop",beepOn:"🔊 Beat ON",beepOff:"🔇 Beat OFF",banner511:"5-1-1 reached: it’s time to go to the hospital.",suggest_init:["Rest, hydration, light snacks.","Warm shower or warm compress for the back.","Deep breathing: inhale 4s, exhale 6s."],suggest_active:["Active labour: get ready to leave.","Hydrate and empty bladder regularly.","Lower back massage and gentle hip rocking."],suggest_close:["Very close contractions (≤3 min): leave for the hospital now.","Short-quick breaths at the peak, deeper between waves.","Forward-leaning positions can help."],suggest_easy:["Early phase: rest, light walk.","Warm shower and diaphragmatic breathing.","Save energy, light food."],avgInterval:m=>`Avg interval ≈ ${m.toFixed(1)} min`,etaActive:mins=>`Active labour ETA ~${Math.max(0,mins).toFixed(0)} min`,statusTitle:"Current status",copy:"Copy",whatsappTitle:"WhatsApp",backup:"Backup",restore:"Restore",whatsappMsg:(info,phase,avgInt,avgDur,rule511,waters)=>`BIRTHTIMER — STATUS\nMom: ${info.mamma||"-"}  Dad: ${info.papa||"-"} ${info.bimbo?("  Baby: "+info.bimbo):""}\nPhase: ${phase}\nAvg interval: ${avgInt?avgInt.toFixed(1):"-"} min\nAvg duration: ${avgDur?avgDur.toFixed(0):"-"} s\n${waters?("Waters broke: "+new Date(waters).toLocaleString()):"Membranes intact"}\n${rule511?"✅ 5-1-1 achieved":"ℹ️ Not yet 5-1-1"}\n(Sent from the BirthTimer app)`,pdf_title:"BirthTimer — Sweet Arrival",pdf_phrase_ready:"Your rhythm shows strength and readiness: you’re about to meet your baby.",pdf_phrase_close:"Waves are close and intense: you are navigating the last stretch with courage.",pdf_phrase_active:"Steady steps toward meeting: hydration, breathing, and kindness smooth the way.",pdf_phrase_early:"Early signs of a journey beginning: honour the pace and protect your calm.",pdf_footer:"The day we counted every heartbeat, waiting to meet you for the first time.",statusLabel:"Current status",noNotes:"No notes yet",confirmResetLog:"Clear contractions log only?",confirmResetAll:"Erase EVERYTHING (log, notes, settings)?",watersSaved:"Waters broke time saved.",watersCleared:"Waters broke cleared."}};
+let lang="it"; const el=id=>document.getElementById(id);
+function t(key,...args){const v=I[lang][key];return (typeof v==="function")?v(...args):v;}
 
-/* ===================== Stato app ===================== */
-const el=id=>document.getElementById(id);
-let theme="beige", data=[], startTime=null, timerInt=null, chart;
+/* ========== Stato ========== */
+let theme="beige", data=[], startTime=null, timerInt=null;
 let ctxECG, x=0, bpm=60, audioCtx, nextBeep=0, soundOn=true;
 let noteList=[], watersTs=null;
+let chart=null; // se c'è Chart.js
+let fallbackChartData=[]; // per grafico nativo
 
-/* ===================== Tema & I18n ===================== */
-function setTheme(t){
-  theme=t;
-  if(t==="pink"){ document.documentElement.style.setProperty("--accent","#d16b8c"); }
-  else if(t==="blue"){ document.documentElement.style.setProperty("--accent","#3b82f6"); }
-  else { document.documentElement.style.setProperty("--accent","#c48a63"); } // beige
-}
+/* ========== Tema / i18n ========== */
+function setTheme(t){theme=t; if(t==="pink"){document.documentElement.style.setProperty("--accent","#d16b8c");} else if(t==="blue"){document.documentElement.style.setProperty("--accent","#3b82f6");} else {document.documentElement.style.setProperty("--accent","#c48a63");}}
 function applyI18n(){
-  el("subtitle").textContent=t("subtitle");
-  el("t_setupTitle").textContent=t("setupTitle");
-  el("t_langLabel").textContent=t("langLabel");
-  el("t_themeLabel").textContent=t("themeLabel");
-  el("t_advTitle").textContent=t("advTitle");
-  el("t_logTitle").textContent=t("logTitle");
-  el("t_diaryTitle").textContent=t("diaryTitle");
-  el("t_colTime").textContent=t("colTime");
-  el("t_colDur").textContent=t("colDur");
-  el("t_colInt").textContent=t("colInt");
-  el("t_colPhase").textContent=t("colPhase");
-  el("markWaters").textContent=t("markWaters");
-  el("clearWaters").textContent=t("clearWaters");
-  el("resetLog").textContent=t("resetLog");
-  el("resetAll").textContent=t("resetAll");
-  el("whatsappBtn").innerHTML="🟢 "+t("whatsappTitle");
-  el("t_backup").textContent=t("backup");
-  el("t_restore").textContent=t("restore");
-  el("t_statusTitle").textContent=t("statusTitle");
-  el("t_copy").textContent=t("copy");
-  el("startStop").textContent=t("btnStart");
-  updateStatusBanner(); // refresh testo localizzato
+  const ids=[["subtitle","subtitle"],["t_setupTitle","setupTitle"],["t_langLabel","langLabel"],["t_themeLabel","themeLabel"],["t_advTitle","advTitle"],["t_logTitle","logTitle"],["t_diaryTitle","diaryTitle"],["t_colTime","colTime"],["t_colDur","colDur"],["t_colInt","colInt"],["t_colPhase","colPhase"]];
+  ids.forEach(([id,key])=>{const n=el(id); if(n) n.textContent=t(key);});
+  const safeSet=(id,txt)=>{const n=el(id); if(n) n.textContent=txt;};
+  safeSet("markWaters",t("markWaters"));
+  safeSet("clearWaters",t("clearWaters"));
+  safeSet("resetLog",t("resetLog"));
+  safeSet("resetAll",t("resetAll"));
+  const w=el("whatsappBtn"); if(w) w.innerHTML="🟢 "+t("whatsappTitle");
+  const b=el("t_backup"); if(b) b.textContent=t("backup");
+  const r=el("t_restore"); if(r) r.textContent=t("restore");
+  const s=el("t_statusTitle"); if(s) s.textContent=t("statusTitle");
+  const c=el("t_copy"); if(c) c.textContent=t("copy");
+  const ss=el("startStop"); if(ss) ss.textContent=t("btnStart");
+  updateStatusBanner();
 }
 
-/* ===================== Setup ===================== */
+/* ========== Setup ========== */
 el("startApp").onclick=()=>{
-  lang = el("langSel").value || "it";
-  setTheme(el("themeSel").value || "beige");
-  applyI18n();
-  const info={mamma:el("mamma").value,papa:el("papa").value,bimbo:el("bimbo").value,theme,lang};
-  localStorage.setItem("birthInfo",JSON.stringify(info));
+  try{
+    lang = el("langSel").value || "it";
+    setTheme(el("themeSel").value || "beige");
+    applyI18n();
+    const info={mamma:el("mamma").value,papa:el("papa").value,bimbo:el("bimbo").value,theme,lang};
+    localStorage.setItem("birthInfo",JSON.stringify(info));
+  }catch(err){ alert("Setup error: "+err); }
+  // mostra Main comunque
   el("setup").classList.add("hidden");
   el("main").classList.remove("hidden");
-  initChart(); initECG(); updatePhase(); renderNotes(); refreshAdvice(); updateWatersBadge(); updateStatusBanner();
+  try{
+    initChart(); initECG(); updatePhase(); renderNotes(); refreshAdvice(); updateWatersBadge(); updateStatusBanner();
+  }catch(err){ alert("Init error: "+err); }
 };
 
-/* ===================== Timer ===================== */
-function formatTime(ms){ let s=Math.floor(ms/1000),m=Math.floor(s/60); s%=60; return `${m.toString().padStart(2,"0")}:${s.toString().padStart(2,"0")}`;}
+/* ========== Timer ========== */
+function formatTime(ms){let s=Math.floor(ms/1000),m=Math.floor(s/60); s%=60; return `${m.toString().padStart(2,"0")}:${s.toString().padStart(2,"0")}`;}
 function updateTimer(){ el("timerText").textContent=formatTime(Date.now()-startTime); }
 
-el("startStop").onclick = ()=>{
-  // START
+el("startStop").onclick=()=>{
   if(!startTime){
-    startTime = Date.now();
-    timerInt = setInterval(updateTimer, 100);
-    el("startStop").textContent = t("btnStop");
-    bpm = 120; nextBeep = 0;
-    return;
+    startTime=Date.now(); timerInt=setInterval(updateTimer,100); el("startStop").textContent=t("btnStop"); bpm=120; nextBeep=0; return;
   }
-  // STOP
   try{
     clearInterval(timerInt);
-    const end = Date.now();
-    const dur = end - startTime;
-    const interval = data.length ? (end - data[data.length-1].end)/1000 : 0;
-    const phase = calcPhase(interval, dur);
-
-    data.push({ start:startTime, end, dur, interval, phase });
+    const end=Date.now(), dur=end-startTime;
+    const interval=data.length ? (end-data[data.length-1].end)/1000 : 0;
+    const phase=calcPhase(interval, dur);
+    data.push({start:startTime,end,dur,interval,phase});
     localStorage.setItem("birthData", JSON.stringify(data));
-
-    renderTable();
-    if(chart){ updateChart(); } else { initChart(); updateChart(); }
-    updatePhase();
-    updateCountdown();
-    refreshAdvice();
-    check511();
-    updateStatusBanner();
-  } catch(err){
-    console.error("Errore nello STOP:", err);
-    alert((lang==="it" ? "Si è verificato un errore durante lo Stop.\n" : "An error occurred on Stop.\n") + String(err));
-  } finally{
-    startTime = null;
-    bpm = 60;
-    el("timerText").textContent = "00:00";
-    el("startStop").textContent = t("btnStart");
+    renderTable(); updateChart(); updatePhase(); updateCountdown(); refreshAdvice(); check511(); updateStatusBanner();
+  }catch(err){ alert("Stop error: "+err); }
+  finally{
+    startTime=null; bpm=60; el("timerText").textContent="00:00"; el("startStop").textContent=t("btnStart");
   }
 };
 
-/* ===================== Reset ===================== */
-el("resetLog").onclick=()=>{
-  if(confirm(t("confirmResetLog"))){
-    data=[]; localStorage.setItem("birthData","[]");
-    renderTable(); updateChart(); updatePhase(); updateCountdown(); refreshAdvice(); updateStatusBanner();
-  }
-};
-el("resetAll").onclick=()=>{
-  if(confirm(t("confirmResetAll"))){
-    localStorage.removeItem("birthData");
-    localStorage.removeItem("birthNotes");
-    localStorage.removeItem("birthInfo");
-    localStorage.removeItem("watersTs");
-    data=[]; noteList=[]; watersTs=null;
-    location.reload();
-  }
-};
+/* ========== Reset ========== */
+el("resetLog").onclick=()=>{ if(confirm(t("confirmResetLog"))){ data=[]; localStorage.setItem("birthData","[]"); renderTable(); updateChart(true); updatePhase(); updateCountdown(); refreshAdvice(); updateStatusBanner(); }};
+el("resetAll").onclick=()=>{ if(confirm(t("confirmResetAll"))){ localStorage.clear(); data=[]; noteList=[]; watersTs=null; location.reload(); }};
 
-/* ===================== Fasi (media mobile) ===================== */
-function movingAvg(arr, n){ const s=arr.slice(-n); return s.length? s.reduce((a,b)=>a+b,0)/s.length : 0; }
+/* ========== Fasi ========== */
+function movingAvg(arr, n){const s=arr.slice(-n); return s.length? s.reduce((a,b)=>a+b,0)/s.length : 0;}
 function calcPhase(intervalSec, durMs){
-  const lastIs = data.slice(-2).map(d=>d.interval).concat(intervalSec);
-  const lastDs = data.slice(-2).map(d=>d.dur).concat(durMs);
-  const avgInt = movingAvg(lastIs,3)/60;
-  const avgDur = movingAvg(lastDs,3)/1000;
-
+  const lastIs=data.slice(-2).map(d=>d.interval).concat(intervalSec);
+  const lastDs=data.slice(-2).map(d=>d.dur).concat(durMs);
+  const avgInt=movingAvg(lastIs,3)/60;
+  const avgDur=movingAvg(lastDs,3)/1000;
   if(avgInt>10 || avgDur<30) return lang==="it"?"Prodromica (latente)":"Latent";
   if(avgInt>7 && avgInt<=10 && avgDur>=30 && avgDur<45) return "Early";
   if(avgInt>4 && avgInt<=7  && avgDur>=45 && avgDur<=60) return lang==="it"?"Attiva":"Active";
@@ -370,51 +239,43 @@ function updatePhase(){
   badge.textContent=d.phase; badge.classList.remove("hidden");
 }
 
-/* ===================== Progress ring ===================== */
-function updateProgress(){
-  const ring=el("progressRing");
-  let p=Math.min(data.length*5,100);
-  ring.style.borderColor=`var(--accent)`;
-  ring.style.transform=`rotate(${p*3.6}deg)`;
-}
+/* ========== Ring ========== */
+function updateProgress(){ const ring=el("progressRing"); let p=Math.min(data.length*5,100); ring.style.borderColor=`var(--accent)`; ring.style.transform=`rotate(${p*3.6}deg)`; }
 
-/* ===================== Countdown ===================== */
+/* ========== Countdown ========== */
 function updateCountdown(){
   if(data.length<3){ el("countdownInfo").textContent=""; return; }
   const intervals=data.slice(-5).map(d=>d.interval/60).filter(x=>x>0);
-  const avg= intervals.reduce((a,b)=>a+b,0)/intervals.length;
-  if(!avg) return;
-  const eta = (avg-5)*20; // euristica semplice
-  el("countdownInfo").textContent = `${t("avgInterval")(avg)} — ${t("etaActive")(eta)}`;
+  const avg= intervals.reduce((a,b)=>a+b,0)/intervals.length; if(!avg) return;
+  const eta=(avg-5)*20;
+  el("countdownInfo").textContent=`${t("avgInterval")(avg)} — ${t("etaActive")(eta)}`;
 }
 
-/* ===================== Suggerimenti ===================== */
+/* ========== Suggerimenti ========== */
 function refreshAdvice(){
   const list=el("suggestions"); list.innerHTML="";
   if(!data.length){ t("suggest_init").forEach(s=>list.innerHTML+=`<li>${s}</li>`); return; }
-  const last3 = data.slice(-3);
-  const avgInt = movingAvg(last3.map(d=>d.interval), last3.length)/60;
-  const avgDur = movingAvg(last3.map(d=>d.dur), last3.length)/1000;
-
+  const last3=data.slice(-3);
+  const avgInt=movingAvg(last3.map(d=>d.interval), last3.length)/60;
   if(avgInt<=3){ t("suggest_close").forEach(s=>list.innerHTML+=`<li>${s}</li>`); }
   else if(avgInt<=5){ t("suggest_active").forEach(s=>list.innerHTML+=`<li>${s}</li>`); }
   else { t("suggest_easy").forEach(s=>list.innerHTML+=`<li>${s}</li>`); }
 }
 
-/* ===================== 5-1-1 ===================== */
+/* ========== 5-1-1 ========== */
 function check511(){
   const oneHourAgo=Date.now()-60*60*1000;
   const lastHour=data.filter(d=>d.start>=oneHourAgo);
-  const avgInt = movingAvg(lastHour.map(d=>d.interval), lastHour.length)/60;
-  const avgDur = movingAvg(lastHour.map(d=>d.dur), lastHour.length)/1000;
-  const rule511 = (avgInt && avgInt<=5) && (avgDur && avgDur>=60) && (lastHour.length>=3);
+  const avgInt=movingAvg(lastHour.map(d=>d.interval), lastHour.length)/60;
+  const avgDur=movingAvg(lastHour.map(d=>d.dur), lastHour.length)/1000;
+  const rule511=(avgInt && avgInt<=5)&&(avgDur && avgDur>=60)&&(lastHour.length>=3);
   const banner=el("banner511");
   if(rule511){ banner.style.display="block"; try{navigator.vibrate&&navigator.vibrate([80,40,80]);}catch(e){} alert(t("banner511")); }
   else banner.style.display="none";
   return {avgInt,avgDur,rule511};
 }
 
-/* ===================== ECG (beep opzionale) ===================== */
+/* ========== ECG + beep ========== */
 el("soundToggle").onclick=()=>{ soundOn=!soundOn; el("soundToggle").textContent=soundOn?t("beepOn"):t("beepOff"); };
 function initECG(){
   const c=el("ecgCanvas"); ctxECG=c.getContext("2d"); let last=performance.now();
@@ -425,278 +286,134 @@ function initECG(){
     ctxECG.strokeStyle=getComputedStyle(document.documentElement).getPropertyValue("--accent");
     ctxECG.lineWidth=2; ctxECG.beginPath();
     let base=c.height/2, amp=12, speed=(bpm/60)*200;
-    for(let i=0;i<c.width;i++){
-      let y=base+Math.sin((x+i)/15)*amp*Math.sin(i/20);
-      ctxECG.lineTo(i,y);
-    }
-    ctxECG.shadowBlur=8; ctxECG.shadowColor=ctxECG.strokeStyle;
-    ctxECG.stroke(); ctxECG.shadowBlur=0; x+=speed*delta;
-
-    if(soundOn && bpm>80){
-      if(!audioCtx) audioCtx=new (window.AudioContext||window.webkitAudioContext)();
-      if(performance.now()>nextBeep){ beep(); nextBeep=performance.now()+(60000/bpm); }
-    }
+    for(let i=0;i<c.width;i++){ let y=base+Math.sin((x+i)/15)*amp*Math.sin(i/20); ctxECG.lineTo(i,y); }
+    ctxECG.shadowBlur=8; ctxECG.shadowColor=ctxECG.strokeStyle; ctxECG.stroke(); ctxECG.shadowBlur=0; x+=speed*delta;
+    if(soundOn && bpm>80){ if(!audioCtx) audioCtx=new (window.AudioContext||window.webkitAudioContext)(); if(performance.now()>nextBeep){ beep(); nextBeep=performance.now()+(60000/bpm); } }
     requestAnimationFrame(loop);
-  }
-  requestAnimationFrame(loop);
+  } requestAnimationFrame(loop);
 }
 function beep(){ if(!audioCtx) return; let o=audioCtx.createOscillator(), g=audioCtx.createGain(); o.connect(g); g.connect(audioCtx.destination); o.frequency.value=600; g.gain.value=0.015; o.start(); o.stop(audioCtx.currentTime+0.04); }
 
-/* ===================== Tabella + Grafico ===================== */
+/* ========== Tabella ========== */
 function renderTable(){
-  const tbl = el("table");
+  const tbl=el("table");
   tbl.innerHTML=`<tr><th>#</th><th>${t("colTime")}</th><th>${t("colDur")}</th><th>${t("colInt")}</th><th>${t("colPhase")}</th></tr>`;
   data.forEach((d,i)=>{
     const time=new Date(d.start).toLocaleTimeString();
-    tbl.innerHTML += `<tr>
-      <td>${i+1}</td>
-      <td>${time}</td>
-      <td>${formatTime(d.dur)}</td>
-      <td>${d.interval ? Math.round(d.interval/60)+'m' : ""}</td>
-      <td>${d.phase}</td>
-    </tr>`;
+    tbl.innerHTML+=`<tr><td>${i+1}</td><td>${time}</td><td>${formatTime(d.dur)}</td><td>${d.interval?Math.round(d.interval/60)+'m':""}</td><td>${d.phase}</td></tr>`;
   });
   updateProgress();
 }
-function initChart(){
-  const c=document.getElementById("chart");
-  chart=new Chart(c,{type:"line",data:{labels:[],datasets:[{label:"Durata (s)",data:[],borderColor:"var(--accent)",fill:false}]},options:{scales:{y:{beginAtZero:true}}}});
-}
-function updateChart(){ chart.data.labels=data.map((_,i)=>i+1); chart.data.datasets[0].data=data.map(d=>Math.round(d.dur/1000)); chart.update(); }
 
-/* ===================== Diario ===================== */
+/* ========== Grafico: usa Chart.js se c'è, altrimenti canvas nativo ========== */
+function initChart(){
+  const canvas=document.getElementById("chart");
+  if(window.Chart){
+    chart=new Chart(canvas,{type:"line",data:{labels:[],datasets:[{label:"Durata (s)",data:[],borderColor:"var(--accent)",fill:false}]},options:{responsive:true,maintainAspectRatio:false,scales:{y:{beginAtZero:true}}}});
+  }else{
+    chart=null; // fallback nativo
+    drawFallbackChart(); // prima draw
+  }
+}
+function updateChart(clear=false){
+  if(window.Chart && chart){
+    chart.data.labels = clear?[]:data.map((_,i)=>i+1);
+    chart.data.datasets[0].data = clear?[]:data.map(d=>Math.round(d.dur/1000));
+    chart.update();
+  }else{
+    // aggiorna dati fallback e ridisegna
+    fallbackChartData = data.map(d=>Math.round(d.dur/1000));
+    drawFallbackChart();
+  }
+}
+function drawFallbackChart(){
+  const c=document.getElementById("chart");
+  const ctx=c.getContext("2d");
+  const W=c.width = c.clientWidth; const H=c.height = c.clientHeight;
+  ctx.fillStyle="#fff"; ctx.fillRect(0,0,W,H);
+  ctx.strokeStyle=getComputedStyle(document.documentElement).getPropertyValue("--accent");
+  ctx.lineWidth=2; ctx.beginPath();
+  if(!fallbackChartData.length){ ctx.moveTo(10,H-10); ctx.lineTo(W-10,H-10); ctx.stroke(); return; }
+  const max=Math.max(10, ...fallbackChartData);
+  const step=(W-20)/Math.max(1,fallbackChartData.length-1);
+  fallbackChartData.forEach((v,i)=>{
+    const x=10+i*step; const y=H-10-(v/max)*(H-30);
+    if(i===0) ctx.moveTo(x,y); else ctx.lineTo(x,y);
+  });
+  ctx.stroke();
+  // assi leggeri
+  ctx.strokeStyle="#ddd"; ctx.lineWidth=1; ctx.beginPath();
+  ctx.moveTo(10,H-10); ctx.lineTo(W-10,H-10); ctx.moveTo(10,10); ctx.lineTo(10,H-10); ctx.stroke();
+}
+
+/* ========== Diario ========== */
 function renderNotes(){
   const box=el("listaNote"); let html="";
   noteList.forEach(n=>{
     html+=`<div style="margin-bottom:10px;background:var(--card);padding:8px;border-radius:10px;"><b>${new Date(n.time).toLocaleString()}</b><br>${n.text||""}`;
-    if(n.img)html+=`<br><img src="${n.img}" style="width:80px;border-radius:8px;margin-top:4px;">`;
+    if(n.img) html+=`<br><img src="${n.img}" style="width:80px;border-radius:8px;margin-top:4px;">`;
     html+=`</div>`;
   });
-  box.innerHTML= html || (`<i>${t("noNotes")}</i>`);
+  box.innerHTML = html || `<i>${t("noNotes")}</i>`;
 }
 el("salvaNota").onclick=()=>{
   const txt=el("noteText").value.trim();
-  const file=el("fotoInput").files[0];
-  if(!txt && !file) return;
+  const file=el("fotoInput").files[0]; if(!txt && !file) return;
   let note={time:Date.now(),text:txt};
-  if(file){
-    const reader=new FileReader();
-    reader.onload=e=>{ note.img=e.target.result; noteList.push(note); localStorage.setItem("birthNotes",JSON.stringify(noteList)); el("noteText").value=""; el("fotoInput").value=""; renderNotes(); updateStatusBanner(); };
-    reader.readAsDataURL(file);
-  }else{ noteList.push(note); localStorage.setItem("birthNotes",JSON.stringify(noteList)); el("noteText").value=""; renderNotes(); updateStatusBanner(); }
+  if(file){ const reader=new FileReader(); reader.onload=e=>{ note.img=e.target.result; noteList.push(note); localStorage.setItem("birthNotes",JSON.stringify(noteList)); el("noteText").value=""; el("fotoInput").value=""; renderNotes(); updateStatusBanner(); }; reader.readAsDataURL(file);}
+  else { noteList.push(note); localStorage.setItem("birthNotes",JSON.stringify(noteList)); el("noteText").value=""; renderNotes(); updateStatusBanner(); }
 };
 
-/* ===================== Acque rotte (toggle) ===================== */
-el("markWaters").onclick=()=>{
-  watersTs = Date.now();
-  localStorage.setItem("watersTs", String(watersTs));
-  updateWatersBadge(); updateStatusBanner();
-  alert(t("watersSaved"));
-};
-el("clearWaters").onclick=()=>{
-  watersTs = null;
-  localStorage.removeItem("watersTs");
-  updateWatersBadge(); updateStatusBanner();
-  alert(t("watersCleared"));
-};
-function updateWatersBadge(){
-  const b=el("watersBadge");
-  if(watersTs){ b.textContent = t("watersAt")(watersTs); b.classList.remove("hidden"); }
-  else b.classList.add("hidden");
-}
+/* ========== Acque rotte ========== */
+el("markWaters").onclick=()=>{ watersTs=Date.now(); localStorage.setItem("watersTs", String(watersTs)); updateWatersBadge(); updateStatusBanner(); alert(t("watersSaved")); };
+el("clearWaters").onclick=()=>{ watersTs=null; localStorage.removeItem("watersTs"); updateWatersBadge(); updateStatusBanner(); alert(t("watersCleared")); };
+function updateWatersBadge(){ const b=el("watersBadge"); if(watersTs){ b.textContent=t("watersAt")(watersTs); b.classList.remove("hidden"); } else b.classList.add("hidden"); }
 
-/* ===================== Status banner (+ copia + WhatsApp) ===================== */
-function buildStatusText(){
-  const info=JSON.parse(localStorage.getItem("birthInfo")||"{}");
-  const {avgInt,avgDur,rule511}=check511();
-  const phase = data.length? data[data.length-1].phase : (lang==="it"?"N/D":"N/A");
-  return t("whatsappMsg")(info,phase,avgInt,avgDur,rule511,watersTs);
-}
-function updateStatusBanner(){
-  el("statusText").textContent = buildStatusText();
-}
-el("copyStatus").onclick=async ()=>{
-  const txt = el("statusText").textContent;
-  try{
-    await (navigator.clipboard?.writeText(txt));
-    el("copyStatus").textContent = "✅ " + t("copy");
-    setTimeout(()=>{el("copyStatus").textContent="📋 "+t("copy");},1200);
-  }catch(e){
-    // fallback
-    const ta=document.createElement("textarea");
-    ta.value=txt; document.body.appendChild(ta); ta.select(); try{document.execCommand("copy");}catch(e){}
-    document.body.removeChild(ta);
-  }
-};
-el("whatsappBtn").onclick = ()=>{
-  const url = `https://wa.me/?text=${encodeURIComponent(buildStatusText())}`;
-  const w = window.open(url, "_blank");
-  if(!w || w.closed || typeof w.closed==="undefined"){ window.location.assign(url); }
-};
+/* ========== Status + WhatsApp ========== */
+function buildStatusText(){ const info=JSON.parse(localStorage.getItem("birthInfo")||"{}"); const {avgInt,avgDur,rule511}=check511(); const phase=data.length?data[data.length-1].phase:(lang==="it"?"N/D":"N/A"); return t("whatsappMsg")(info,phase,avgInt,avgDur,rule511,watersTs); }
+function updateStatusBanner(){ const s=el("statusText"); if(s) s.textContent=buildStatusText(); }
+el("copyStatus").onclick=async()=>{ const txt=el("statusText").textContent; try{ await (navigator.clipboard?.writeText(txt)); el("copyStatus").textContent="✅ "+t("copy"); setTimeout(()=>{el("copyStatus").textContent="📋 "+t("copy");},1200);}catch(e){ const ta=document.createElement("textarea"); ta.value=txt; document.body.appendChild(ta); ta.select(); try{document.execCommand("copy");}catch(_){} document.body.removeChild(ta);} };
+el("whatsappBtn").onclick=()=>{ const url=`https://wa.me/?text=${encodeURIComponent(buildStatusText())}`; const w=window.open(url,"_blank"); if(!w||w.closed||typeof w.closed==="undefined"){ window.location.assign(url); } };
 
-/* ===================== Backup / Restore ===================== */
-el("backupBtn").onclick=()=>{
-  const pack={
-    info: JSON.parse(localStorage.getItem("birthInfo")||"{}"),
-    data: JSON.parse(localStorage.getItem("birthData")||"[]"),
-    notes: JSON.parse(localStorage.getItem("birthNotes")||"[]"),
-    watersTs
-  };
-  const blob=new Blob([JSON.stringify(pack,null,2)],{type:"application/json"});
-  const url=URL.createObjectURL(blob);
-  const a=document.createElement("a");
-  a.href=url; a.download="BirthTimer_backup.json"; a.click(); URL.revokeObjectURL(url);
-};
-el("restoreInput").addEventListener("change",(e)=>{
-  const f=e.target.files[0]; if(!f) return;
-  const reader=new FileReader();
-  reader.onload=evt=>{
-    try{
-      const pack=JSON.parse(evt.target.result);
-      if(pack.info) localStorage.setItem("birthInfo",JSON.stringify(pack.info));
-      if(pack.data) localStorage.setItem("birthData",JSON.stringify(pack.data));
-      if(pack.notes) localStorage.setItem("birthNotes",JSON.stringify(pack.notes));
-      watersTs = pack.watersTs || null;
-      if(watersTs) localStorage.setItem("watersTs", String(watersTs)); else localStorage.removeItem("watersTs");
-      // ricarica stato
-      const info=pack.info||{};
-      lang=info.lang||lang; setTheme((info.theme||theme)); applyI18n();
-      data=pack.data||[]; noteList=pack.notes||[];
-      el("setup").classList.add("hidden"); el("main").classList.remove("hidden");
-      initChart(); renderTable(); updateChart(); updatePhase(); updateCountdown(); refreshAdvice(); initECG(); updateWatersBadge(); updateStatusBanner();
-      alert(lang==="it"?"Ripristino completato.":"Restore completed.");
-    }catch(err){ alert("Invalid JSON"); }
-  };
-  reader.readAsText(f);
-});
+/* ========== Backup / Restore ========== */
+el("backupBtn").onclick=()=>{ const pack={ info:JSON.parse(localStorage.getItem("birthInfo")||"{}"), data:JSON.parse(localStorage.getItem("birthData")||"[]"), notes:JSON.parse(localStorage.getItem("birthNotes")||"[]"), watersTs }; const blob=new Blob([JSON.stringify(pack,null,2)],{type:"application/json"}); const url=URL.createObjectURL(blob); const a=document.createElement("a"); a.href=url; a.download="BirthTimer_backup.json"; a.click(); URL.revokeObjectURL(url); };
+el("restoreInput").addEventListener("change",(e)=>{ const f=e.target.files[0]; if(!f) return; const reader=new FileReader(); reader.onload=evt=>{ try{ const pack=JSON.parse(evt.target.result); if(pack.info) localStorage.setItem("birthInfo",JSON.stringify(pack.info)); if(pack.data) localStorage.setItem("birthData",JSON.stringify(pack.data)); if(pack.notes) localStorage.setItem("birthNotes",JSON.stringify(pack.notes)); watersTs = pack.watersTs || null; if(watersTs) localStorage.setItem("watersTs", String(watersTs)); else localStorage.removeItem("watersTs"); const info=pack.info||{}; lang=info.lang||lang; setTheme(info.theme||theme); applyI18n(); data=pack.data||[]; noteList=pack.notes||[]; el("setup").classList.add("hidden"); el("main").classList.remove("hidden"); initChart(); renderTable(); updateChart(); updatePhase(); updateCountdown(); refreshAdvice(); initECG(); updateWatersBadge(); updateStatusBanner(); alert(lang==="it"?"Ripristino completato.":"Restore completed."); }catch(err){ alert("Invalid JSON"); } }; reader.readAsText(f); });
 
-/* ===================== Export HTML ===================== */
-el("exportBtn").onclick=()=>{
-  const info=JSON.parse(localStorage.getItem("birthInfo")||"{}");
-  const accent=getComputedStyle(document.documentElement).getPropertyValue("--accent").trim()||"#c48a63";
-  let html=`<html><head><title>BirthTimer Memory</title>
-  <style>
-  @import url('https://fonts.googleapis.com/css2?family=Nunito+Sans:wght@400;600&family=Pacifico&display=swap');
-  body{font-family:'Nunito Sans',sans-serif;background:#fff6f0;color:#333;text-align:center;}
-  h1{font-family:'Pacifico',cursive;color:${accent};margin-bottom:0}
-  .frame{border:10px solid rgba(0,0,0,0.05);border-radius:24px;padding:20px;margin:20px;
-    background:radial-gradient(rgba(0,0,0,0.03) 1.5px,transparent 1.5px) 0 0/40px 40px,
-               radial-gradient(rgba(0,0,0,0.03) 1.5px,transparent 1.5px) 20px 20px/40px 40px;}
-  .sub{color:#777;margin-top:0}
-  table{width:92%;margin:auto;border-collapse:collapse;} td,th{border:1px solid #ddd;padding:6px;}
-  .chip{display:inline-block;background:${accent}15;color:${accent};padding:4px 10px;border-radius:999px;margin:8px 0}
-  img{border-radius:12px}
-  </style></head><body>
-  <div class='frame'>
-  <div style="font-size:40px">🧸⭐️🧸</div>
-  <h1>${t("pdf_title")}</h1>
-  <div class="sub">${info.mamma||"Mamma"} ❤️ ${info.papa||"Papà"} ${info.bimbo?("— "+info.bimbo):""}</div>
-  ${watersTs?`<div class="chip">${t("watersAt")(watersTs)}</div>`:""}
-  <table><tr><th>#</th><th>${t("colTime")}</th><th>${t("colDur")}</th><th>${t("colInt")}</th><th>${t("colPhase")}</th></tr>`;
-  data.forEach((d,i)=>{
-    const time=new Date(d.start).toLocaleTimeString();
-    html+=`<tr><td>${i+1}</td><td>${time}</td><td>${formatTime(d.dur)}</td><td>${d.interval?Math.round(d.interval/60)+'m':""}</td><td>${d.phase}</td></tr>`;
-  });
-  html+=`</table><h3>${t("diaryTitle")}</h3>`;
-  noteList.forEach(n=>{
-    html+=`<p><b>${new Date(n.time).toLocaleString()}:</b> ${n.text||""}`;
-    if(n.img) html+=`<br><img src='${n.img}' width='120'>`;
-    html+=`</p>`;
-  });
-  html+=`<p style='margin-top:25px;font-style:italic;color:#666;'>${t("pdf_footer")}</p>
-  <p style='font-size:.85em;margin-top:22px;color:#999'>BirthTimer v3.3 — Created by <b>Stephan Winckler</b> © 2025</p>
-  </div></body></html>`;
-  const blob=new Blob([html],{type:"text/html"}); const url=URL.createObjectURL(blob); window.open(url,"_blank");
-};
+/* ========== Export HTML / PDF ========== */
+el("exportBtn").onclick=()=>{ const info=JSON.parse(localStorage.getItem("birthInfo")||"{}"); const accent=getComputedStyle(document.documentElement).getPropertyValue("--accent").trim()||"#c48a63"; let html=`<html><head><title>BirthTimer Memory</title><style>@import url('https://fonts.googleapis.com/css2?family=Nunito+Sans:wght@400;600&family=Pacifico&display=swap');body{font-family:'Nunito Sans',sans-serif;background:#fff6f0;color:#333;text-align:center;}h1{font-family:'Pacifico',cursive;color:${accent};margin-bottom:0}.frame{border:10px solid rgba(0,0,0,0.05);border-radius:24px;padding:20px;margin:20px;background:radial-gradient(rgba(0,0,0,0.03) 1.5px,transparent 1.5px) 0 0/40px 40px,radial-gradient(rgba(0,0,0,0.03) 1.5px,transparent 1.5px) 20px 20px/40px 40px;}.sub{color:#777;margin-top:0}table{width:92%;margin:auto;border-collapse:collapse;}td,th{border:1px solid #ddd;padding:6px;}.chip{display:inline-block;background:${accent}15;color:${accent};padding:4px 10px;border-radius:999px;margin:8px 0}img{border-radius:12px}</style></head><body><div class='frame'><div style="font-size:40px">🧸⭐️🧸</div><h1>${t("pdf_title")}</h1><div class="sub">${info.mamma||"Mamma"} ❤️ ${info.papa||"Papà"} ${info.bimbo?("— "+info.bimbo):""}</div>${watersTs?`<div class="chip">${t("watersAt")(watersTs)}</div>`:""}<table><tr><th>#</th><th>${t("colTime")}</th><th>${t("colDur")}</th><th>${t("colInt")}</th><th>${t("colPhase")}</th></tr>`; data.forEach((d,i)=>{ const time=new Date(d.start).toLocaleTimeString(); html+=`<tr><td>${i+1}</td><td>${time}</td><td>${formatTime(d.dur)}</td><td>${d.interval?Math.round(d.interval/60)+'m':""}</td><td>${d.phase}</td></tr>`;}); html+=`</table><h3>${t("diaryTitle")}</h3>`; noteList.forEach(n=>{ html+=`<p><b>${new Date(n.time).toLocaleString()}:</b> ${n.text||""}`; if(n.img) html+=`<br><img src='${n.img}' width='120'>`; html+=`</p>`;}); html+=`<p style='margin-top:25px;font-style:italic;color:#666;'>${t("pdf_footer")}</p><p style='font-size:.85em;margin-top:22px;color:#999'>BirthTimer v3.3.1 — Created by <b>Stephan Winckler</b> © 2025</p></div></body></html>`; const blob=new Blob([html],{type:"text/html"}); const url=URL.createObjectURL(blob); window.open(url,"_blank"); };
 
-/* ===================== Export PDF ===================== */
 el("pdfBtn").onclick=()=>{
-  const { jsPDF }=window.jspdf;
-  const info=JSON.parse(localStorage.getItem("birthInfo")||"{}");
-  const accent=getComputedStyle(document.documentElement).getPropertyValue("--accent").trim()||"#c48a63";
-  const rgb = hexToRgb(accent);
-
-  // metriche
-  const intervals=data.map(d=>d.interval).filter(x=>x>0);
-  const durations=data.map(d=>d.dur);
-  const avgInt = intervals.length ? intervals.reduce((a,b)=>a+b,0)/intervals.length/60 : 0;
-  const avgDur = durations.length ? durations.reduce((a,b)=>a+b,0)/durations.length/1000 : 0;
-  const oneHourAgo=Date.now()-60*60*1000;
-  const lastHour=data.filter(d=>d.start>=oneHourAgo);
-  const rule511 = (avgInt && avgInt<=5) && (avgDur && avgDur>=60) && (lastHour.length>=3);
-
-  // frase dinamica
-  let phrase = I[lang].pdf_phrase_early;
-  if(rule511) phrase = I[lang].pdf_phrase_ready;
-  else if(avgInt && avgInt<=3) phrase = I[lang].pdf_phrase_close;
-  else if(avgInt && avgInt<=5) phrase = I[lang].pdf_phrase_active;
-
-  const doc=new jsPDF({unit:"pt",format:"a4"});
-  // sfondo velato tema + cornice
-  doc.setFillColor(rgb[0],rgb[1],rgb[2],20); doc.rect(0,0,595,842,"F");
-  doc.setDrawColor(rgb[0],rgb[1],rgb[2]); doc.setLineWidth(2); doc.roundedRect(24,24,595-48,842-48,14,14,"S");
-
-  // header
-  doc.setFont("helvetica","bold"); doc.setTextColor(rgb[0],rgb[1],rgb[2]); doc.setFontSize(28);
-  doc.text(I[lang].pdf_title,48,80);
-  doc.setFontSize(12); doc.setTextColor(80);
-  let sub = `${info.mamma||"Mom"} ❤ ${info.papa||"Dad"} ${info.bimbo?(" — "+info.bimbo):""}`;
-  doc.text(sub,48,100);
-  doc.setFontSize(24); doc.setTextColor(rgb[0],rgb[1],rgb[2]);
-  doc.text("🧸  ⭐️  🧸", 480, 80, {align:"right", baseline:"middle"});
-
-  // riassunto
-  doc.setTextColor(60); doc.setFontSize(12);
-  doc.text((lang==="it"?"Contrazioni registrate: ":"Contractions recorded: ")+data.length,48,130);
-  if(avgInt) doc.text(`${t("avgInterval")(avgInt)}`,48,146);
-  if(avgDur) doc.text((lang==="it"?"Durata media: ":"Avg duration: ")+avgDur.toFixed(0)+" s",48,162);
-  if(watersTs) doc.text(t("watersAt")(watersTs),48,178);
-
-  // frase
-  doc.setFont("helvetica","italic"); doc.setTextColor(40); doc.setFontSize(13);
-  const wrapped = doc.splitTextToSize("“"+phrase+"”", 595-96);
-  doc.text(wrapped,48,206);
-
-  // tabella log
-  let y=244; doc.setFont("helvetica","bold"); doc.setTextColor(30);
-  doc.text(lang==="it"?"Registro contrazioni":"Contraction log",48,y);
-  y+=10; doc.setDrawColor(200); doc.line(48,y,595-48,y); y+=14; doc.setFont("helvetica","normal");
-  data.forEach((d,i)=>{
-    const line = `${(i+1).toString().padStart(2,"0")} • ${new Date(d.start).toLocaleTimeString()} • ${lang==="it"?"Dur":"Dur"}: ${formatTime(d.dur)} • ${lang==="it"?"Int":"Int"}: ${d.interval?Math.round(d.interval/60)+'m':'-'} • ${d.phase}`;
-    doc.text(line,48,y); y+=16; if(y>760){ doc.addPage(); y=64; }
-  });
-
-  // diario
-  y+=6; if(y>760){ doc.addPage(); y=64; }
-  doc.setFont("helvetica","bold"); doc.setTextColor(30);
-  doc.text(I[lang].diaryTitle,48,y); y+=10; doc.setDrawColor(200); doc.line(48,y,595-48,y); y+=16;
-  doc.setFont("helvetica","normal"); doc.setTextColor(50);
-  noteList.forEach(n=>{
-    const lines = doc.splitTextToSize(`• ${new Date(n.time).toLocaleString()}: ${n.text||""}`, 595-96);
-    lines.forEach(L=>{ doc.text(L,48,y); y+=14; if(y>760){ doc.addPage(); y=64; } });
-  });
-
-  // footer
-  if(y>760){ doc.addPage(); y=64; }
-  doc.setFont("helvetica","italic"); doc.setTextColor(90);
-  doc.text(I[lang].pdf_footer,48, 800);
-  doc.setFont("helvetica","normal"); doc.setTextColor(120);
-  doc.text("BirthTimer v3.3 — Created by Stephan Winckler © 2025",48, 820);
-
+  if(!(window.jspdf && window.jspdf.jsPDF)){ alert(lang==="it"?"PDF non disponibile offline. Riprova con internet attivo.":"PDF not available offline. Try again with internet."); return; }
+  const { jsPDF }=window.jspdf; const info=JSON.parse(localStorage.getItem("birthInfo")||"{}"); const accent=getComputedStyle(document.documentElement).getPropertyValue("--accent").trim()||"#c48a63"; const rgb=hexToRgb(accent);
+  const intervals=data.map(d=>d.interval).filter(x=>x>0); const durations=data.map(d=>d.dur);
+  const avgInt=intervals.length? intervals.reduce((a,b)=>a+b,0)/intervals.length/60 : 0;
+  const avgDur=durations.length? durations.reduce((a,b)=>a+b,0)/durations.length/1000 : 0;
+  const oneHourAgo=Date.now()-60*60*1000; const lastHour=data.filter(d=>d.start>=oneHourAgo);
+  const rule511=(avgInt&&avgInt<=5)&&(avgDur&&avgDur>=60)&&(lastHour.length>=3);
+  let phrase=I[lang].pdf_phrase_early; if(rule511) phrase=I[lang].pdf_phrase_ready; else if(avgInt&&avgInt<=3) phrase=I[lang].pdf_phrase_close; else if(avgInt&&avgInt<=5) phrase=I[lang].pdf_phrase_active;
+  const doc=new jsPDF({unit:"pt",format:"a4"}); doc.setFillColor(rgb[0],rgb[1],rgb[2],20); doc.rect(0,0,595,842,"F"); doc.setDrawColor(rgb[0],rgb[1],rgb[2]); doc.setLineWidth(2); doc.roundedRect(24,24,595-48,842-48,14,14,"S");
+  doc.setFont("helvetica","bold"); doc.setTextColor(rgb[0],rgb[1],rgb[2]); doc.setFontSize(28); doc.text(I[lang].pdf_title,48,80);
+  doc.setFontSize(12); doc.setTextColor(80); const sub=`${info.mamma||"Mom"} ❤ ${info.papa||"Dad"} ${info.bimbo?(" — "+info.bimbo):""}`; doc.text(sub,48,100);
+  doc.setFontSize(24); doc.setTextColor(rgb[0],rgb[1],rgb[2]); doc.text("🧸  ⭐️  🧸",480,80,{align:"right",baseline:"middle"});
+  doc.setTextColor(60); doc.setFontSize(12); doc.text((lang==="it"?"Contrazioni registrate: ":"Contractions recorded: ")+data.length,48,130);
+  if(avgInt) doc.text(`${t("avgInterval")(avgInt)}`,48,146); if(avgDur) doc.text((lang==="it"?"Durata media: ":"Avg duration: ")+avgDur.toFixed(0)+" s",48,162); if(watersTs) doc.text(t("watersAt")(watersTs),48,178);
+  doc.setFont("helvetica","italic"); doc.setTextColor(40); doc.setFontSize(13); const wrapped=doc.splitTextToSize("“"+phrase+"”",595-96); doc.text(wrapped,48,206);
+  let y=244; doc.setFont("helvetica","bold"); doc.setTextColor(30); doc.text(lang==="it"?"Registro contrazioni":"Contraction log",48,y); y+=10; doc.setDrawColor(200); doc.line(48,y,595-48,y); y+=14; doc.setFont("helvetica","normal");
+  data.forEach((d,i)=>{ const line=`${(i+1).toString().padStart(2,"0")} • ${new Date(d.start).toLocaleTimeString()} • ${lang==="it"?"Dur":"Dur"}: ${formatTime(d.dur)} • ${lang==="it"?"Int":"Int"}: ${d.interval?Math.round(d.interval/60)+'m':'-'} • ${d.phase}`; doc.text(line,48,y); y+=16; if(y>760){ doc.addPage(); y=64; } });
+  y+=6; if(y>760){ doc.addPage(); y=64; } doc.setFont("helvetica","bold"); doc.setTextColor(30); doc.text(I[lang].diaryTitle,48,y); y+=10; doc.setDrawColor(200); doc.line(48,y,595-48,y); y+=16; doc.setFont("helvetica","normal"); doc.setTextColor(50);
+  noteList.forEach(n=>{ const lines=doc.splitTextToSize(`• ${new Date(n.time).toLocaleString()}: ${n.text||""}`,595-96); lines.forEach(L=>{ doc.text(L,48,y); y+=14; if(y>760){ doc.addPage(); y=64; } }); });
+  if(y>760){ doc.addPage(); y=64; } doc.setFont("helvetica","italic"); doc.setTextColor(90); doc.text(I[lang].pdf_footer,48,800); doc.setFont("helvetica","normal"); doc.setTextColor(120); doc.text("BirthTimer v3.3.1 — Created by Stephan Winckler © 2025",48,820);
   doc.save("BirthTimer.pdf");
-
-  function hexToRgb(hex){ hex=hex.replace("#",""); const n=parseInt(hex,16); return [(n>>16)&255,(n>>8)&255,n&255]; }
+  function hexToRgb(hex){hex=hex.replace("#","");const n=parseInt(hex,16);return[(n>>16)&255,(n>>8)&255,n&255];}
 };
 
-/* ===================== Init ===================== */
+/* ========== Init ========== */
 window.onload=()=>{
   const info=JSON.parse(localStorage.getItem("birthInfo")||"{}");
-  lang = info.lang || "it"; setTheme(info.theme||"beige"); applyI18n();
-
+  lang=info.lang||"it"; setTheme(info.theme||"beige"); applyI18n();
   const saved=JSON.parse(localStorage.getItem("birthData")||"[]");
   noteList=JSON.parse(localStorage.getItem("birthNotes")||"[]");
   watersTs = localStorage.getItem("watersTs") ? Number(localStorage.getItem("watersTs")) : null;
-
   if(info.mamma){
     el("mamma").value=info.mamma||""; el("papa").value=info.papa||""; el("bimbo").value=info.bimbo||"";
     el("langSel").value=lang; el("themeSel").value=theme;
