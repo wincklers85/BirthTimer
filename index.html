@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0,user-scalable=no">
+<title>BirthTimer — The Day You Arrived</title>
+<style>
+:root {
+  --bg:#f8f3ec; --fg:#222; --accent:#c48a63; --ecg:#c48a63;
+}
+body {margin:0;font-family:'Poppins',sans-serif;background:var(--bg);color:var(--fg);text-align:center;overflow-x:hidden;}
+header{padding:20px;}
+.logo{font-size:2em;font-weight:600;letter-spacing:1px;animation:pulse 2s infinite;}
+@keyframes pulse{0%{opacity:.6;transform:scale(1)}50%{opacity:1;transform:scale(1.05)}100%{opacity:.6;transform:scale(1)}}
+h1,h2,h3{margin:10px 0;}
+#setup,#main{display:none;max-width:500px;margin:auto;}
+input,select,button{font-size:1em;padding:10px;border:1px solid #ccc;border-radius:6px;margin:5px;}
+button{background:var(--accent);color:#fff;border:none;cursor:pointer;transition:.2s;}
+button:hover{opacity:.85;}
+button.big{width:80%;height:80px;font-size:1.5em;margin-top:20px;border-radius:40px;}
+#log{margin-top:20px;text-align:left;padding:10px;}
+table{width:100%;border-collapse:collapse;margin-top:10px;font-size:.9em;}
+td,th{border-bottom:1px solid #ddd;padding:6px;text-align:center;}
+canvas{width:100%;height:200px;margin-top:10px;}
+#ecgCanvas{width:100%;height:80px;margin-top:10px;}
+footer{font-size:.8em;margin:20px 0;color:#666;}
+.theme-btn{margin:5px;padding:8px 14px;border-radius:20px;border:none;cursor:pointer;}
+#soundToggle{margin-top:10px;font-size:.9em;}
+#exportBtn,#pdfBtn{margin-top:15px;}
+</style>
+</head>
+<body>
+<header>
+  <div class="logo">❤️ BirthTimer</div>
+  <p id="subtitle">Il giorno in cui sei arrivato</p>
+</header>
+
+<div id="setup">
+  <h2>Impostazioni iniziali / Initial setup</h2>
+  <input id="mamma" placeholder="Nome Mamma / Mom name">
+  <input id="papa" placeholder="Nome Papà / Dad name">
+  <input id="bimbo" placeholder="Nome Bimbo/a / Baby name"><br>
+  <label>Lingua / Language:</label>
+  <select id="lang">
+    <option value="it">Italiano</option>
+    <option value="en">English</option>
+  </select><br>
+  <label>Scegli tema / Choose theme:</label><br>
+  <button class="theme-btn" data-theme="pink" style="background:#f8cce2;">🌸 Rosa</button>
+  <button class="theme-btn" data-theme="blue" style="background:#cde4ff;">💙 Azzurro</button>
+  <button class="theme-btn" data-theme="beige" style="background:#f8f3ec;">🤍 Beige</button><br>
+  <button id="startApp">Inizia / Start</button>
+</div>
+
+<div id="main">
+  <h2 id="phaseTitle"></h2>
+  <div id="timer" style="font-size:2.5em;margin-top:10px;">00:00</div>
+  <canvas id="ecgCanvas" width="500" height="80"></canvas>
+  <button id="soundToggle">🔊 Battito ON</button><br>
+  <button id="startStop" class="big">Start</button>
+  <div id="log">
+    <h3>Storico / Log</h3>
+    <table id="table"><tr><th>#</th><th>Ora</th><th>Durata</th><th>Intervallo</th><th>Fase</th></tr></table>
+  </div>
+  <canvas id="chart"></canvas>
+  <button id="exportBtn">📤 Esporta Ricordo / Export Memory</button>
+  <button id="pdfBtn">📄 Esporta come PDF</button>
+</div>
+
+<footer>BirthTimer v2.1 — Created by <b>Stephan Winckler</b> © 2025</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+<script>
+let data=[], startTime=null, timerInt=null, chart, theme="beige", lang="it";
+let bpm=60, soundOn=true, ctx, x=0, audioCtx=null, nextBeep=0;
+const el=id=>document.getElementById(id);
+
+function setTheme(t){
+  theme=t;
+  if(t==="pink"){document.documentElement.style.setProperty("--bg","#f8cce2");document.documentElement.style.setProperty("--accent","#d16b8c");document.documentElement.style.setProperty("--ecg","#d16b8c");}
+  else if(t==="blue"){document.documentElement.style.setProperty("--bg","#cde4ff");document.documentElement.style.setProperty("--accent","#3b82f6");document.documentElement.style.setProperty("--ecg","#3b82f6");}
+  else{document.documentElement.style.setProperty("--bg","#f8f3ec");document.documentElement.style.setProperty("--accent","#c48a63");document.documentElement.style.setProperty("--ecg","#c48a63");}
+}
+
+document.querySelectorAll(".theme-btn").forEach(b=>b.onclick=()=>setTheme(b.dataset.theme));
+setTimeout(()=>{if(theme==="beige"&&!data.length) setTheme("beige");},5000);
+
+el("soundToggle").onclick=()=>{
+  soundOn=!soundOn;
+  el("soundToggle").textContent=soundOn?"🔊 Battito ON":"🔇 Battito OFF";
+}
+
+el("startApp").onclick=()=>{
+  lang=el("lang").value;
+  const info={mamma:el("mamma").value,papa:el("papa").value,bimbo:el("bimbo").value,theme,lang};
+  localStorage.setItem("birthInfo",JSON.stringify(info));
+  el("setup").style.display="none";
+  el("main").style.display="block";
+  initChart();
+  initECG();
+  updatePhase();
+}
+
+function formatTime(ms){
+  let s=Math.floor(ms/1000);
+  let m=Math.floor(s/60);
+  s%=60;
+  return `${m.toString().padStart(2,"0")}:${s.toString().padStart(2,"0")}`;
+}
+
+function updateTimer(){el("timer").textContent=formatTime(Date.now()-startTime);}
+
+el("startStop").onclick=()=>{
+  if(!startTime){
+    startTime=Date.now();
+    timerInt=setInterval(updateTimer,100);
+    el("startStop").textContent="Stop";
+    bpm=120; nextBeep=0;
+  }else{
+    clearInterval(timerInt);
+    let dur=Date.now()-startTime;
+    let interval=data.length?(Date.now()-data[data.length-1].end)/1000:0;
+    let phase=getPhase(interval);
+    data.push({start:startTime,end:Date.now(),dur,interval,phase});
+    localStorage.setItem("birthData",JSON.stringify(data));
+    renderTable(); updateChart(); updatePhase();
+    startTime=null; bpm=60;
+    el("timer").textContent="00:00"; el("startStop").textContent="Start";
+  }
+}
+
+function getPhase(interval){
+  if(interval>10*60) return lang=="it"?"Prodromica":"Prodromal";
+  if(interval>5*60) return lang=="it"?"Attiva":"Active";
+  return lang=="it"?"Avanzata":"Advanced";
+}
+
+function renderTable(){
+  let t=el("table");
+  t.innerHTML="<tr><th>#</th><th>Ora</th><th>Durata</th><th>Intervallo</th><th>Fase</th></tr>";
+  data.forEach((d,i)=>{
+    let time=new Date(d.start).toLocaleTimeString();
+    t.innerHTML+=`<tr><td>${i+1}</td><td>${time}</td><td>${formatTime(d.dur)}</td><td>${d.interval?Math.round(d.interval/60)+"m":""}</td><td>${d.phase}</td></tr>`;
+  });
+}
+
+function initChart(){
+  const c=document.getElementById("chart");
+  chart=new Chart(c,{type:"line",data:{labels:[],datasets:[{label:"Durata (s)",data:[],borderColor:"var(--accent)",fill:false}]},options:{scales:{y:{beginAtZero:true}}}});
+}
+
+function updateChart(){
+  chart.data.labels=data.map((_,i)=>i+1);
+  chart.data.datasets[0].data=data.map(d=>Math.round(d.dur/1000));
+  chart.update();
+}
+
+function updatePhase(){
+  if(!data.length){el("phaseTitle").textContent=lang=="it"?"In attesa delle contrazioni...":"Waiting for contractions...";return;}
+  let last=data[data.length-1];
+  el("phaseTitle").textContent=lang=="it"?"Fase: "+last.phase:"Phase: "+last.phase;
+}
+
+function initECG(){
+  const canvas=el("ecgCanvas");
+  ctx=canvas.getContext("2d");
+  let lastTime=performance.now();
+  function drawECG(now){
+    const delta=(now-lastTime)/1000; lastTime=now;
+    ctx.fillStyle=getComputedStyle(document.documentElement).getPropertyValue("--bg");
+    ctx.fillRect(0,0,canvas.width,canvas.height);
+    ctx.strokeStyle=getComputedStyle(document.documentElement).getPropertyValue("--ecg");
+    ctx.lineWidth=2; ctx.beginPath();
+    let base=canvas.height/2, amp=15;
+    let speed=(bpm/60)*200;
+    for(let i=0;i<canvas.width;i++){
+      let y=base+Math.sin((x+i)/15)*amp;
+      ctx.lineTo(i,y);
+    }
+    ctx.stroke(); x+=speed*delta;
+    if(soundOn && bpm>80 && audioCtx){
+      if(performance.now()>nextBeep){beep(); nextBeep=performance.now()+(60000/bpm);}
+    }
+    requestAnimationFrame(drawECG);
+  }
+  requestAnimationFrame(drawECG);
+  audioCtx=new (window.AudioContext||window.webkitAudioContext)();
+}
+
+function beep(){
+  let o=audioCtx.createOscillator(); let g=audioCtx.createGain();
+  o.connect(g); g.connect(audioCtx.destination);
+  o.frequency.value=600; g.gain.value=0.02;
+  o.start(); o.stop(audioCtx.currentTime+0.05);
+}
+
+el("exportBtn").onclick=()=>{
+  const info=JSON.parse(localStorage.getItem("birthInfo")||"{}");
+  let html=`<html><head><title>BirthTimer Memory</title>
+  <style>body{font-family:Poppins,sans-serif;background:#fdfaf6;color:#222;text-align:center;}
+  table{width:90%;margin:auto;border-collapse:collapse;}td,th{border:1px solid #ccc;padding:6px;}
+  h1{color:#c48a63;}img{width:60px;animation:pulse 2s infinite;}@keyframes pulse{0%{opacity:.6}50%{opacity:1}100%{opacity:.6}}
+  </style></head><body>
+  <img src='https://upload.wikimedia.org/wikipedia/commons/thumb/4/4f/Heart_font_awesome.svg/120px-Heart_font_awesome.svg.png'><h1>BirthTimer — Memory</h1>
+  <h3>${info.mamma||"Mamma"} ❤️ ${info.papa||"Papà"}</h3>
+  <h4>${info.bimbo?("Per il nostro piccolo/a "+info.bimbo):""}</h4>
+  <table><tr><th>#</th><th>Ora</th><th>Durata</th><th>Intervallo</th><th>Fase</th></tr>`;
+  data.forEach((d,i)=>{
+    let time=new Date(d.start).toLocaleTimeString();
+    html+=`<tr><td>${i+1}</td><td>${time}</td><td>${formatTime(d.dur)}</td><td>${Math.round(d.interval/60)}m</td><td>${d.phase}</td></tr>`;
+  });
+  html+=`</table><p style='margin-top:20px;font-style:italic;'>Il giorno in cui abbiamo contato ogni battito,<br>in attesa di incontrarti per la prima volta.<br><br>The day we counted every heartbeat,<br>waiting to meet you for the first time.</p>
+  <p style='margin-top:40px;font-size:.8em;'>BirthTimer v2.1 — Created by <b>Stephan Winckler</b> © 2025</p></body></html>`;
+  const blob=new Blob([html],{type:"text/html"});
+  const url=URL.createObjectURL(blob);
+  window.open(url,"_blank");
+}
+
+el("pdfBtn").onclick=async()=>{
+  const { jsPDF }=window.jspdf;
+  const info=JSON.parse(localStorage.getItem("birthInfo")||"{}");
+  const doc=new jsPDF();
+  doc.setFontSize(18); doc.text("BirthTimer — The Day You Arrived",15,20);
+  doc.setFontSize(12); doc.text(`Mamma: ${info.mamma||"-"}  Papà: ${info.papa||"-"}`,15,30);
+  if(info.bimbo) doc.text(`Bimbo/a: ${info.bimbo}`,15,37);
+  let y=50;
+  data.forEach((d,i)=>{
+    let line=`${i+1}. ${new Date(d.start).toLocaleTimeString()}  Durata: ${formatTime(d.dur)}  Intervallo: ${Math.round(d.interval/60)}m  Fase: ${d.phase}`;
+    doc.text(line,15,y); y+=7; if(y>270){doc.addPage();y=20;}
+  });
+  doc.text("Il giorno in cui abbiamo contato ogni battito,",15,y+20);
+  doc.text("in attesa di incontrarti per la prima volta.",15,y+27);
+  doc.text("BirthTimer v2.1 — Created by Stephan Winckler © 2025",15,y+40);
+  doc.save("BirthTimer.pdf");
+}
+
+window.onload=()=>{
+  const info=JSON.parse(localStorage.getItem("birthInfo")||"{}");
+  const saved=JSON.parse(localStorage.getItem("birthData")||"[]");
+  if(info.mamma){
+    setTheme(info.theme||"beige"); lang=info.lang||"it"; data=saved;
+    el("setup").style.display="none"; el("main").style.display="block";
+    initChart(); renderTable(); updateChart(); updatePhase(); initECG();
+  } else el("setup").style.display="block";
+}
+</script>
+</body>
+</html>
