@@ -21,9 +21,7 @@ body{
   text-align:center;
   overflow-x:hidden;
 }
-header{
-  padding:25px 10px;
-}
+header{ padding:25px 10px; }
 .logo{
   font-family:'Pacifico',cursive;
   font-size:2.2em;
@@ -39,7 +37,7 @@ header{
   margin:15px auto;
   max-width:500px;
 }
-button,input,select{
+button,input,select,textarea{
   font-family:'Nunito Sans',sans-serif;
   border-radius:12px;
   border:1px solid #ddd;
@@ -64,41 +62,26 @@ button:hover{opacity:.9;transform:translateY(-2px);}
   margin-top:15px;
 }
 #timerCircle{
-  width:180px;
-  height:180px;
-  margin:20px auto 0;
-  border-radius:50%;
-  position:relative;
-  background:#fff;
+  width:180px; height:180px; margin:20px auto 0;
+  border-radius:50%; position:relative; background:#fff;
   box-shadow:var(--soft-shadow);
 }
 #timerText{
-  position:absolute;
-  top:50%;left:50%;
+  position:absolute; top:50%;left:50%;
   transform:translate(-50%,-50%);
-  font-size:2em;
-  font-weight:600;
+  font-size:2em; font-weight:600;
 }
 #progressRing{
-  position:absolute;
-  top:0;left:0;
-  width:100%;height:100%;
-  border-radius:50%;
-  border:6px solid var(--accent);
+  position:absolute; top:0;left:0; width:100%;height:100%;
+  border-radius:50%; border:6px solid var(--accent);
   box-sizing:border-box;
   clip-path:polygon(50% 50%,50% 0,100% 0,100% 100%,0 100%,0 0,50% 0);
+  transform:rotate(0deg);
 }
-#ecgCanvas{
-  width:100%;
-  height:90px;
-  margin-top:10px;
-}
-footer{
-  font-size:.8em;
-  margin:25px 0 10px;
-  color:#777;
-}
+#ecgCanvas{ width:100%; height:90px; margin-top:10px; }
+footer{ font-size:.8em; margin:25px 0 10px; color:#777; }
 .pattern{
+  /* pattern baby soft (punti sfalsati) */
   background-image:
     radial-gradient(rgba(196,138,99,0.15) 1.5px,transparent 1.5px),
     radial-gradient(rgba(196,138,99,0.15) 1.5px,transparent 1.5px);
@@ -106,12 +89,14 @@ footer{
   background-position:0 0,20px 20px;
 }
 .dark{
-  --bg:#1e1e1e;
-  --fg:#eee;
-  --card:#2c2c2c;
-  --accent:#d6b47a;
+  --bg:#1e1e1e; --fg:#eee; --card:#2c2c2c; --accent:#d6b47a;
 }
 .hidden{display:none;}
+table{width:100%;border-collapse:collapse;margin-top:10px;font-size:.9em;}
+td,th{border-bottom:1px solid #ddd;padding:6px;text-align:center;}
+canvas{width:100%;height:200px;margin-top:10px;}
+#ecgCanvas{height:90px}
+#countdownInfo{margin-top:15px;font-size:.95em;color:#666;}
 </style>
 </head>
 <body class="pattern">
@@ -119,172 +104,208 @@ footer{
   <div class="logo">BirthTimer Sweet Arrival</div>
   <div class="sub">Il giorno in cui sei arrivato</div>
 </header>
+
 <div id="app">
   <!-- Schermata di setup -->
-<div id="setup" class="card">
-  <h2>Impostazioni iniziali / Initial Setup</h2>
-  <input id="mamma" placeholder="Nome Mamma / Mom name"><br>
-  <input id="papa" placeholder="Nome Papà / Dad name"><br>
-  <input id="bimbo" placeholder="Nome Bimbo/a / Baby name"><br>
-  <label>Lingua / Language:</label>
-  <select id="lang">
-    <option value="it">Italiano</option>
-    <option value="en">English</option>
-  </select><br>
-  <label>Tema:</label>
-  <select id="themeSel">
-    <option value="beige">🤍 Beige</option>
-    <option value="pink">🌸 Rosa</option>
-    <option value="blue">💙 Azzurro</option>
-  </select><br>
-  <button id="startApp">Inizia / Start</button>
+  <div id="setup" class="card">
+    <h2>Impostazioni iniziali / Initial Setup</h2>
+    <input id="mamma" placeholder="Nome Mamma / Mom name"><br>
+    <input id="papa" placeholder="Nome Papà / Dad name"><br>
+    <input id="bimbo" placeholder="Nome Bimbo/a / Baby name"><br>
+    <label>Lingua / Language:</label>
+    <select id="lang">
+      <option value="it">Italiano</option>
+      <option value="en">English</option>
+    </select><br>
+    <label>Tema:</label>
+    <select id="themeSel">
+      <option value="beige">🤍 Beige</option>
+      <option value="pink">🌸 Rosa</option>
+      <option value="blue">💙 Azzurro</option>
+    </select><br>
+    <button id="startApp">Inizia / Start</button>
+  </div>
+
+  <!-- Schermata principale -->
+  <div id="main" class="hidden">
+    <div id="phaseTitle" style="font-weight:600;margin-top:10px;"></div>
+
+    <div id="timerCircle">
+      <div id="progressRing"></div>
+      <div id="timerText">00:00</div>
+    </div>
+
+    <canvas id="ecgCanvas" width="500" height="90"></canvas>
+
+    <div style="margin-top:10px;">
+      <button id="soundToggle">🔊 Battito ON</button>
+      <button id="darkToggle">🌙 Modalità Notte</button>
+    </div>
+
+    <div style="margin-top:10px;">
+      <label>🎵 Seleziona melodia:</label>
+      <select id="musicSel">
+        <option value="none">Nessuna / None</option>
+        <option value="lullaby">Lullaby Piano</option>
+        <option value="ambient">Ambient Soft</option>
+        <option value="heartbeat">Heartbeat Lullaby</option>
+      </select>
+      <button id="musicPlay">▶️ Play</button>
+      <button id="musicStop">⏸ Stop</button>
+    </div>
+
+    <button id="startStop" class="bigBtn">Start</button>
+
+    <div id="countdownInfo"></div>
+
+    <div id="log" class="card">
+      <h3>Storico / Log</h3>
+      <table id="table">
+        <tr><th>#</th><th>Ora</th><th>Durata</th><th>Intervallo</th><th>Fase</th></tr>
+      </table>
+    </div>
+
+    <div id="diario" class="card">
+      <h3>📔 Diario nascita</h3>
+      <textarea id="noteText" rows="3" style="width:95%;border-radius:10px;border:1px solid #ccc;"></textarea><br>
+      <input type="file" id="fotoInput" accept="image/*"><br>
+      <button id="salvaNota">💾 Aggiungi nota</button>
+      <div id="listaNote" style="text-align:left;margin-top:10px;font-size:.9em;"></div>
+    </div>
+
+    <canvas id="chart"></canvas>
+
+    <button id="exportBtn">📤 Esporta Ricordo / Export Memory</button>
+    <button id="pdfBtn">📄 PDF Elegante</button>
+  </div>
 </div>
 
-<!-- Schermata principale -->
-<div id="main" class="hidden">
-  <div id="phaseTitle" style="font-weight:600;margin-top:10px;"></div>
-
-  <div id="timerCircle">
-    <div id="progressRing"></div>
-    <div id="timerText">00:00</div>
-  </div>
-
-  <canvas id="ecgCanvas" width="500" height="90"></canvas>
-
-  <div style="margin-top:10px;">
-    <button id="soundToggle">🔊 Battito ON</button>
-    <button id="darkToggle">🌙 Modalità Notte</button>
-  </div>
-
-  <div style="margin-top:10px;">
-    <label>🎵 Seleziona melodia:</label>
-    <select id="musicSel">
-      <option value="none">Nessuna / None</option>
-      <option value="lullaby">Lullaby Piano</option>
-      <option value="ambient">Ambient Soft</option>
-      <option value="heartbeat">Heartbeat Lullaby</option>
-    </select>
-    <button id="musicPlay">▶️ Play</button>
-    <button id="musicStop">⏸ Stop</button>
-  </div>
-
-  <button id="startStop" class="bigBtn">Start</button>
-
-  <div id="countdownInfo" style="margin-top:15px;font-size:.95em;color:#666;"></div>
-
-  <div id="log" class="card">
-    <h3>Storico / Log</h3>
-    <table id="table" style="width:100%;border-collapse:collapse;">
-      <tr><th>#</th><th>Ora</th><th>Durata</th><th>Intervallo</th><th>Fase</th></tr>
-    </table>
-  </div>
-
-  <div id="diario" class="card">
-    <h3>📔 Diario nascita</h3>
-    <textarea id="noteText" rows="3" style="width:95%;border-radius:10px;border:1px solid #ccc;"></textarea><br>
-    <input type="file" id="fotoInput" accept="image/*"><br>
-    <button id="salvaNota">💾 Aggiungi nota</button>
-    <div id="listaNote" style="text-align:left;margin-top:10px;font-size:.9em;"></div>
-  </div>
-
-  <canvas id="chart"></canvas>
-
-  <button id="exportBtn">📤 Esporta Ricordo / Export Memory</button>
-  <button id="pdfBtn">📄 PDF Elegante</button>
-</div>
-
-<!-- chiusura app -->
-</div>
 <footer>BirthTimer v3.0 — Created by <b>Stephan Winckler</b> © 2025</footer>
+
+<!-- Libs -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
-<script>
-const el=id=>document.getElementById(id);
-let data=[],startTime=null,timerInt=null,chart,ctxECG,x=0,bpm=60,audioCtx,nextBeep=0;
-let theme="beige",lang="it",dark=false,soundOn=true;
 
-// ---------- Tema e modalità notte ----------
+<script>
+/* ====== VARIABILI GLOBALI ====== */
+const el=id=>document.getElementById(id);
+let data=[], startTime=null, timerInt=null, chart;
+let ctxECG, x=0, bpm=60, audioCtx, nextBeep=0;
+let theme="beige", lang="it", dark=false, soundOn=true;
+let noteList=[];
+
+/* ====== TEMA & DARK MODE ====== */
 function setTheme(t){
   theme=t;
-  if(t==="pink"){document.documentElement.style.setProperty("--accent","#d16b8c");}
-  else if(t==="blue"){document.documentElement.style.setProperty("--accent","#3b82f6");}
-  else{document.documentElement.style.setProperty("--accent","#c48a63");}
+  if(t==="pink"){ document.documentElement.style.setProperty("--accent","#d16b8c"); }
+  else if(t==="blue"){ document.documentElement.style.setProperty("--accent","#3b82f6"); }
+  else { document.documentElement.style.setProperty("--accent","#c48a63"); } // beige default
 }
 el("darkToggle").onclick=()=>{
   dark=!dark;
   document.body.classList.toggle("dark",dark);
-  el("darkToggle").textContent=dark?"☀️ Modalità Giorno":"🌙 Modalità Notte";
+  el("darkToggle").textContent = dark ? "☀️ Modalità Giorno" : "🌙 Modalità Notte";
 };
 
-// ---------- Start app ----------
-el("startApp").onclick=()=>{
-  lang=el("lang").value;
-  setTheme(el("themeSel").value);
-  const info={mamma:el("mamma").value,papa:el("papa").value,bimbo:el("bimbo").value,theme,lang};
-  localStorage.setItem("birthInfo",JSON.stringify(info));
+/* ====== START APP (CLICK) ====== */
+function startAppHandler(){
+  lang = el("lang").value || "it";
+  setTheme(el("themeSel").value || "beige");
+
+  const info={
+    mamma:el("mamma").value,
+    papa:el("papa").value,
+    bimbo:el("bimbo").value,
+    theme, lang
+  };
+  localStorage.setItem("birthInfo", JSON.stringify(info));
+
   el("setup").classList.add("hidden");
   el("main").classList.remove("hidden");
-  initChart(); initECG(); updatePhase();
-};
 
-// ---------- Timer ----------
+  initChart(); initECG(); updatePhase(); renderNotes();
+}
+el("startApp").onclick = startAppHandler;
+
+/* ====== FALLBACK BIND (DOMContentLoaded) ====== */
+document.addEventListener("DOMContentLoaded", ()=>{
+  const btn = document.getElementById("startApp");
+  if(btn && !btn._bound){
+    btn.addEventListener("click", startAppHandler);
+    btn._bound = true;
+  }
+});
+
+/* ====== TIMER ====== */
 function formatTime(ms){
-  let s=Math.floor(ms/1000),m=Math.floor(s/60); s%=60;
+  let s=Math.floor(ms/1000), m=Math.floor(s/60); s%=60;
   return `${m.toString().padStart(2,"0")}:${s.toString().padStart(2,"0")}`;
 }
-function updateTimer(){el("timerText").textContent=formatTime(Date.now()-startTime);}
+function updateTimer(){
+  el("timerText").textContent = formatTime(Date.now()-startTime);
+}
 el("startStop").onclick=()=>{
   if(!startTime){
+    // start
     startTime=Date.now();
     timerInt=setInterval(updateTimer,100);
     el("startStop").textContent="Stop";
     bpm=120; nextBeep=0;
   }else{
+    // stop -> salva evento
     clearInterval(timerInt);
     let dur=Date.now()-startTime;
-    let interval=data.length?(Date.now()-data[data.length-1].end)/1000:0;
+    let interval=data.length ? (Date.now()-data[data.length-1].end)/1000 : 0;
     let phase=getPhase(interval);
-    data.push({start:startTime,end:Date.now(),dur,interval,phase});
-    localStorage.setItem("birthData",JSON.stringify(data));
+    data.push({start:startTime, end:Date.now(), dur, interval, phase});
+    localStorage.setItem("birthData", JSON.stringify(data));
     renderTable(); updateChart(); updatePhase(); updateCountdown();
     startTime=null; bpm=60;
-    el("timerText").textContent="00:00"; el("startStop").textContent="Start";
+    el("timerText").textContent="00:00";
+    el("startStop").textContent="Start";
   }
 };
 
-// ---------- Fasi ----------
+/* ====== FASI ====== */
 function getPhase(interval){
   if(interval>10*60) return lang=="it"?"Prodromica":"Prodromal";
-  if(interval>5*60) return lang=="it"?"Attiva":"Active";
-  return lang=="it"?"Avanzata":"Advanced";
+  if(interval>5*60)  return lang=="it"?"Attiva":"Active";
+  return               lang=="it"?"Avanzata":"Advanced";
 }
 function updatePhase(){
-  if(!data.length){el("phaseTitle").textContent=lang=="it"?"In attesa delle contrazioni...":"Waiting for contractions...";return;}
+  if(!data.length){
+    el("phaseTitle").textContent = (lang=="it") ? "In attesa delle contrazioni..." : "Waiting for contractions...";
+    return;
+  }
   let last=data[data.length-1];
-  el("phaseTitle").textContent=lang=="it"?"Fase: "+last.phase:"Phase: "+last.phase;
+  el("phaseTitle").textContent = (lang=="it") ? ("Fase: "+last.phase) : ("Phase: "+last.phase);
 }
 
-// ---------- Progress ring ----------
+/* ====== PROGRESS RING ====== */
 function updateProgress(){
   const ring=el("progressRing");
-  let p=Math.min(data.length*5,100);
+  let p=Math.min(data.length*5,100);     // semplice proxy visivo
   ring.style.borderColor=`var(--accent)`;
   ring.style.transform=`rotate(${p*3.6}deg)`;
 }
 
-// ---------- Countdown stimato ----------
+/* ====== COUNTDOWN STIMATO ====== */
 function updateCountdown(){
-  if(data.length<3){el("countdownInfo").textContent="";return;}
+  if(data.length<3){ el("countdownInfo").textContent=""; return; }
   let intervals=data.slice(-5).map(d=>d.interval/60).filter(x=>x>0);
-  let avg=intervals.reduce((a,b)=>a+b,0)/intervals.length;
-  if(isNaN(avg))return;
-  let msg=lang=="it"
-    ?`Media intervallo ≈ ${avg.toFixed(1)} min — travaglio attivo in ~${(avg*2).toFixed(0)} min`
-    :`Avg interval ≈ ${avg.toFixed(1)} min — active labour in ~${(avg*2).toFixed(0)} min`;
-  el("countdownInfo").textContent=msg;
+  let avg = intervals.reduce((a,b)=>a+b,0)/intervals.length;
+  if(isNaN(avg)) return;
+  let msg = (lang=="it")
+    ? `Media intervallo ≈ ${avg.toFixed(1)} min — travaglio attivo in ~${(avg*2).toFixed(0)} min`
+    : `Avg interval ≈ ${avg.toFixed(1)} min — active labour in ~${(avg*2).toFixed(0)} min`;
+  el("countdownInfo").textContent = msg;
 }
 
-// ---------- ECG dinamico ----------
+/* ====== ECG DINAMICO ====== */
+el("soundToggle").onclick=()=>{
+  soundOn=!soundOn;
+  el("soundToggle").textContent = soundOn ? "🔊 Battito ON" : "🔇 Battito OFF";
+};
 function initECG(){
   const c=el("ecgCanvas"); ctxECG=c.getContext("2d");
   let last=performance.now();
@@ -294,27 +315,31 @@ function initECG(){
     ctxECG.fillRect(0,0,c.width,c.height);
     ctxECG.strokeStyle=getComputedStyle(document.documentElement).getPropertyValue("--accent");
     ctxECG.lineWidth=2; ctxECG.beginPath();
-    let base=c.height/2,amp=12,speed=(bpm/60)*200;
+    let base=c.height/2, amp=12, speed=(bpm/60)*200;
     for(let i=0;i<c.width;i++){
       let y=base+Math.sin((x+i)/15)*amp*Math.sin(i/20);
       ctxECG.lineTo(i,y);
     }
     ctxECG.shadowBlur=8; ctxECG.shadowColor=ctxECG.strokeStyle;
     ctxECG.stroke(); ctxECG.shadowBlur=0; x+=speed*delta;
-    if(soundOn&&bpm>80&&audioCtx){if(performance.now()>nextBeep){beep();nextBeep=performance.now()+(60000/bpm);}}
+
+    if(soundOn && bpm>80){
+      if(!audioCtx) audioCtx=new (window.AudioContext||window.webkitAudioContext)();
+      if(performance.now()>nextBeep){ beep(); nextBeep=performance.now()+(60000/bpm); }
+    }
     requestAnimationFrame(loop);
   }
   requestAnimationFrame(loop);
-  audioCtx=new (window.AudioContext||window.webkitAudioContext)();
 }
 function beep(){
-  let o=audioCtx.createOscillator();let g=audioCtx.createGain();
-  o.connect(g);g.connect(audioCtx.destination);
-  o.frequency.value=600;g.gain.value=0.015;
-  o.start();o.stop(audioCtx.currentTime+0.04);
+  if(!audioCtx) return;
+  let o=audioCtx.createOscillator(), g=audioCtx.createGain();
+  o.connect(g); g.connect(audioCtx.destination);
+  o.frequency.value=600; g.gain.value=0.015;
+  o.start(); o.stop(audioCtx.currentTime+0.04);
 }
 
-// ---------- Tabella e grafico ----------
+/* ====== TABELLA + GRAFICO ====== */
 function renderTable(){
   let t=el("table");
   t.innerHTML="<tr><th>#</th><th>Ora</th><th>Durata</th><th>Intervallo</th><th>Fase</th></tr>";
@@ -326,85 +351,86 @@ function renderTable(){
 }
 function initChart(){
   const c=document.getElementById("chart");
-  chart=new Chart(c,{type:"line",data:{labels:[],datasets:[{label:"Durata (s)",data:[],borderColor:"var(--accent)",fill:false}]},
-  options:{scales:{y:{beginAtZero:true}}}});
+  chart=new Chart(c,{
+    type:"line",
+    data:{labels:[],datasets:[{label:"Durata (s)",data:[],borderColor:"var(--accent)",fill:false}]},
+    options:{scales:{y:{beginAtZero:true}}}
+  });
 }
 function updateChart(){
   chart.data.labels=data.map((_,i)=>i+1);
   chart.data.datasets[0].data=data.map(d=>Math.round(d.dur/1000));
   chart.update();
 }
-  <script>
-/* ---------- MUSICA ---------- */
+
+/* ====== MUSICA (PLACEHOLDER BASE64) ====== */
 let currentAudio=null;
-const lullabyB64="data:audio/mp3;base64,//insert-royalty-free-piano-loop-base64-here";
-const ambientB64="data:audio/mp3;base64,//insert-royalty-free-ambient-loop-base64-here";
-const heartbeatB64="data:audio/mp3;base64,//insert-royalty-free-heartbeat-loop-base64-here";
+const lullabyB64   ="data:audio/mp3;base64,//INSERT_LULLABY_PIANO_BASE64_HERE";
+const ambientB64   ="data:audio/mp3;base64,//INSERT_AMBIENT_SOFT_BASE64_HERE";
+const heartbeatB64 ="data:audio/mp3;base64,//INSERT_HEARTBEAT_LULLABY_BASE64_HERE";
 
 function playMusic(type){
   stopMusic();
   let src=null;
-  if(type==="lullaby")src=lullabyB64;
-  else if(type==="ambient")src=ambientB64;
-  else if(type==="heartbeat")src=heartbeatB64;
-  if(!src)return;
-  currentAudio=new Audio(src);
-  currentAudio.loop=true;
-  currentAudio.volume=0.3;
-  currentAudio.play();
+  if(type==="lullaby")   src=lullabyB64;
+  else if(type==="ambient") src=ambientB64;
+  else if(type==="heartbeat") src=heartbeatB64;
+  if(!src || src.includes("INSERT_")){ alert("Aggiungi la melodia Base64 nel codice per usarla offline."); return; }
+  currentAudio=new Audio(src); currentAudio.loop=true; currentAudio.volume=0.3; currentAudio.play();
 }
-function stopMusic(){
-  if(currentAudio){currentAudio.pause();currentAudio=null;}
-}
+function stopMusic(){ if(currentAudio){ currentAudio.pause(); currentAudio=null; } }
 el("musicPlay").onclick=()=>playMusic(el("musicSel").value);
 el("musicStop").onclick=()=>stopMusic();
 
-/* ---------- DIARIO NASCITA ---------- */
-let noteList=JSON.parse(localStorage.getItem("birthNotes")||"[]");
+/* ====== DIARIO NASCITA ====== */
 function renderNotes(){
   let html="";
-  noteList.forEach((n,i)=>{
+  noteList.forEach((n)=>{
     html+=`<div style="margin-bottom:10px;background:var(--card);padding:8px;border-radius:10px;">
-      <b>${new Date(n.time).toLocaleString()}</b><br>${n.text}`;
+      <b>${new Date(n.time).toLocaleString()}</b><br>${n.text||""}`;
     if(n.img) html+=`<br><img src="${n.img}" style="width:80px;border-radius:8px;margin-top:4px;">`;
     html+="</div>";
   });
-  el("listaNote").innerHTML=html||"<i>Nessuna nota</i>";
+  el("listaNote").innerHTML = html || "<i>Nessuna nota</i>";
 }
-renderNotes();
-
 el("salvaNota").onclick=()=>{
   const txt=el("noteText").value.trim();
-  if(!txt && !el("fotoInput").files.length)return;
+  const file=el("fotoInput").files[0];
+  if(!txt && !file) return;
+
   let note={time:Date.now(),text:txt};
-  if(el("fotoInput").files.length){
+  if(file){
     const reader=new FileReader();
     reader.onload=e=>{
       note.img=e.target.result;
       noteList.push(note);
-      localStorage.setItem("birthNotes",JSON.stringify(noteList));
-      el("noteText").value="";
-      el("fotoInput").value="";
+      localStorage.setItem("birthNotes", JSON.stringify(noteList));
+      el("noteText").value=""; el("fotoInput").value="";
       renderNotes();
     };
-    reader.readAsDataURL(el("fotoInput").files[0]);
+    reader.readAsDataURL(file);
   }else{
     noteList.push(note);
-    localStorage.setItem("birthNotes",JSON.stringify(noteList));
+    localStorage.setItem("birthNotes", JSON.stringify(noteList));
     el("noteText").value="";
     renderNotes();
   }
 };
 
-/* ---------- EXPORT RICORDO ---------- */
+/* ====== EXPORT RICORDO (HTML) ====== */
 el("exportBtn").onclick=()=>{
   const info=JSON.parse(localStorage.getItem("birthInfo")||"{}");
   let html=`<html><head><title>BirthTimer Memory</title>
   <style>
+  @import url('https://fonts.googleapis.com/css2?family=Nunito+Sans:wght@400;600&family=Pacifico&display=swap');
   body{font-family:'Nunito Sans',sans-serif;background:#fff6f8;color:#333;text-align:center;}
   h1{font-family:'Pacifico',cursive;color:#c48a63;}
-  .frame{border:10px solid #f8d7da;border-radius:20px;padding:20px;margin:20px;
-         background:url('https://i.ibb.co/3sZJ9nz/baby-bg.png') repeat;}
+  .frame{
+    border:10px solid #f8d7da;border-radius:20px;padding:20px;margin:20px;
+    background:
+      radial-gradient(rgba(196,138,99,0.12) 1.5px,transparent 1.5px) 0 0/40px 40px,
+      radial-gradient(rgba(196,138,99,0.12) 1.5px,transparent 1.5px) 20px 20px/40px 40px;
+  }
   table{width:90%;margin:auto;border-collapse:collapse;}
   td,th{border:1px solid #ddd;padding:6px;}
   img{border-radius:10px;}
@@ -420,7 +446,7 @@ el("exportBtn").onclick=()=>{
   });
   html+=`</table><h3>📔 Diario</h3>`;
   noteList.forEach(n=>{
-    html+=`<p><b>${new Date(n.time).toLocaleString()}:</b> ${n.text}<br>`;
+    html+=`<p><b>${new Date(n.time).toLocaleString()}:</b> ${n.text||""}<br>`;
     if(n.img)html+=`<img src='${n.img}' width='100'>`;
     html+=`</p>`;
   });
@@ -432,7 +458,7 @@ el("exportBtn").onclick=()=>{
   window.open(url,"_blank");
 };
 
-/* ---------- EXPORT PDF ---------- */
+/* ====== EXPORT PDF ====== */
 el("pdfBtn").onclick=async()=>{
   const { jsPDF }=window.jspdf;
   const info=JSON.parse(localStorage.getItem("birthInfo")||"{}");
@@ -449,8 +475,10 @@ el("pdfBtn").onclick=async()=>{
   });
   y+=10; doc.text("📔 Diario:",15,y); y+=7;
   noteList.forEach(n=>{
-    doc.text(`- ${new Date(n.time).toLocaleString()}: ${n.text}`,15,y);
-    y+=6; if(y>270){doc.addPage();y=20;}
+    const lines = doc.splitTextToSize(`${new Date(n.time).toLocaleString()}: ${n.text||""}`, 180);
+    lines.forEach(L=>{
+      doc.text("- "+L,15,y); y+=6; if(y>270){doc.addPage();y=20;}
+    });
   });
   y+=10;
   doc.text("Il giorno in cui abbiamo contato ogni battito,",15,y);
@@ -458,9 +486,8 @@ el("pdfBtn").onclick=async()=>{
   doc.text("BirthTimer v3.0 — Created by Stephan Winckler © 2025",15,y+20);
   doc.save("BirthTimer.pdf");
 };
-</script>
-<script>
-/* ---------- INIZIALIZZAZIONE ---------- */
+
+/* ====== INIT ====== */
 window.onload=()=>{
   const info=JSON.parse(localStorage.getItem("birthInfo")||"{}");
   const saved=JSON.parse(localStorage.getItem("birthData")||"[]");
@@ -477,10 +504,9 @@ window.onload=()=>{
   }else{
     el("setup").classList.remove("hidden");
   }
-
-  // auto-dark dopo le 21:00
+  // Auto-dark dopo le 21
   const h=new Date().getHours();
-  if(h>=21||h<6){document.body.classList.add("dark");dark=true;el("darkToggle").textContent="☀️ Modalità Giorno";}
+  if(h>=21||h<6){ document.body.classList.add("dark"); dark=true; el("darkToggle").textContent="☀️ Modalità Giorno"; }
 };
 </script>
 </body>
